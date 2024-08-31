@@ -1,15 +1,23 @@
-#include <revid_engine/Engine.h>
-#include <revid_engine/ServiceLocater.h>
-#include <iostream>
+#include <revid_engine/platform/Application.h>
+#include <revid_engine/platform/EntryPoint.h>
 
-int main()
+class RevidApp : public Revid::Application
 {
-    RevidEngine::Init();
-    ServiceLocator::GetWindow()->OpenWindow();
-
-    while(!ServiceLocator::GetWindow()->Update())
+public:
+    RevidApp(String title) : Application(std::move(title))
     {
-
+        // std::cout << "Intialising Revid Application\n";
     }
 
+protected:
+    void Update(float deltaTime) override
+    {
+        // std::cout << "Updating\n";
+    }
+
+};
+
+Revid::Application* CreateApplication()
+{
+    return new RevidApp("RevidApp");
 }

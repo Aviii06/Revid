@@ -1,7 +1,12 @@
 #pragma once
 
-class RevidEngine
+namespace Revid
 {
-public:
-    static void Init();
-};
+
+    class RevidEngine
+    {
+    public:
+        static void Init();
+    };
+
+}

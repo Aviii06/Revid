@@ -1,12 +1,9 @@
 #include <revid_engine/Engine.h>
-#include <revid_engine/ServiceLocater.h>
 #include <iostream>
+#include <logging/Logging.h>
 
-#include "platform/CustomWindow.h"
-
-void RevidEngine::Init()
+void Revid::RevidEngine::Init()
 {
+    // Logger::GetInstance().Log(INFO, "lessgooo");
     std::cout << "Initialising Engine\n";
-
-    ServiceLocator::Provide(new CustomWindow());
 }

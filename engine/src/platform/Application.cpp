@@ -12,7 +12,7 @@ Revid::Application::Application()
 Revid::Application::Application(String title)
     : m_title(title), m_isRunning(true)
 {
-    Logger::GetInstance().Log(LogLevel::INFO, "Initialising Revid Application named: " + title);
+    Logger::Log(LogLevel::INFO, "Initialising Revid Application named: " + title);
     initializeLogger();
     intializeServices();
 }
@@ -49,6 +49,7 @@ void Revid::Application::intializeServices()
     });
 
     RendererSettings settings {
+    	.MAX_FRAMES_IN_FLIGHT = 3,
         .appName =  m_title,
         .windowExtentions = ServiceLocator::GetWindow()->GetExtentions(),
         .windowExtentionCount = ServiceLocator::GetWindow()->GetExtentionCount()

@@ -61,17 +61,21 @@ VkExtent2D Revid::VulkanRenderer::chooseSwapExtent(const VkSurfaceCapabilitiesKH
     {
         return capabilities.currentExtent;
     }
-    else
-    {
-        std::pair<int, int> size = ServiceLocator::GetWindow()->GetSize();
-        VkExtent2D actualExtent = {
-            static_cast<uint32_t>(size.first),
-            static_cast<uint32_t>(size.second)
-        };
 
-        actualExtent.width = std::clamp(actualExtent.width, capabilities.minImageExtent.width, capabilities.maxImageExtent.width);
-        actualExtent.height = std::clamp(actualExtent.height, capabilities.minImageExtent.height, capabilities.maxImageExtent.height);
+	std::pair<int, int> size = ServiceLocator::GetWindow()->GetSize();
+	VkExtent2D actualExtent = {
+		static_cast<uint32_t>(size.first),
+		static_cast<uint32_t>(size.second)
+	};
 
-        return actualExtent;
-    }
+	actualExtent.width = std::clamp(
+		actualExtent.width,
+		capabilities.minImageExtent.width,
+		capabilities.maxImageExtent.width);
+	actualExtent.height = std::clamp(
+		actualExtent.height,
+		capabilities.minImageExtent.height,
+		capabilities.maxImageExtent.height);
+
+	return actualExtent;
 }

@@ -21,13 +21,18 @@ namespace Revid
     protected:
         uint32_t m_extensionCount = 0;
         const char** m_extensions;
+        WindowData m_windowData;
+
     public:
-        virtual void OpenWindow(WindowData) = 0;
+        virtual void OpenWindow(const WindowData&) = 0;
         virtual bool Update() = 0;
         virtual void Shutdown() = 0;
-        virtual std::pair<int, int> GetSize() = 0;
+        [[nodiscard]] std::pair<int, int> GetSize() const { return {m_windowData.m_width, m_windowData.m_height}; };
         [[nodiscard]] uint32_t GetExtentionCount() const { return m_extensionCount; };
         [[nodiscard]] const char** GetExtentions() const  { return m_extensions; };
+        [[nodiscard]] const WindowData& GetWindowData() const { return m_windowData; }
+
+        virtual void WaitForEvents() = 0;
 
         virtual void GetDrawSurface(Map<SurfaceArgs, int*>) = 0;
     };

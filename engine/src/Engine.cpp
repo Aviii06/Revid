@@ -4,6 +4,6 @@
 
 void Revid::RevidEngine::Init()
 {
-    // Logger::GetInstance().Log(INFO, "lessgooo");
+    // Logger::Log(INFO, "lessgooo");
     std::cout << "Initialising Engine\n";
 }

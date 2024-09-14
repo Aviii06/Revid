@@ -15,7 +15,7 @@ namespace Revid
 
         static inline void shutdownWindow()
         {
-            Logger::GetInstance().Log(LogLevel::INFO, "Shutting Down Window");
+            Logger::Log(LogLevel::INFO, "Shutting Down Window");
             s_window->Shutdown();
             s_window.reset();
             s_window = nullptr;
@@ -23,7 +23,7 @@ namespace Revid
 
         static inline void shutdownRenderer()
         {
-            Logger::GetInstance().Log(LogLevel::INFO, "Shutting Down Renderer");
+            Logger::Log(LogLevel::INFO, "Shutting Down Renderer");
             s_renderer->Shutdown();
             s_renderer.reset();
         }
@@ -31,14 +31,14 @@ namespace Revid
     public:
         static inline void Provide(Window *window)
         {
-            Logger::GetInstance().Log(LogLevel::INFO, "Creating a Window");
+            Logger::Log(LogLevel::INFO, "Creating a Window");
             if (s_window != nullptr) return;
             s_window = std::unique_ptr<Window>(window);
         }
 
         static inline void Provide(Renderer *renderer, RendererSettings settings)
         {
-            Logger::GetInstance().Log(LogLevel::INFO, "Creating Renderer");
+            Logger::Log(LogLevel::INFO, "Creating Renderer");
             if (s_renderer != nullptr) return;
 
             s_renderer = std::unique_ptr<Renderer>(renderer);

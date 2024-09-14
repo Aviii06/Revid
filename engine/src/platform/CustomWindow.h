@@ -12,13 +12,15 @@ namespace Revid
     private:
         GLFWwindow* m_window;
 
+        static void framebufferResizeCallback(GLFWwindow* window, int width, int height);
+
     public:
         CustomWindow() = default;
-        void OpenWindow(WindowData) override;
+        void OpenWindow(const WindowData&) override;
         bool Update() override;
         void Shutdown() override;
         void GetDrawSurface(Map<SurfaceArgs, int*>) override;
-        std::pair<int, int> GetSize() override;
+        void WaitForEvents() override;
     };
 }
 

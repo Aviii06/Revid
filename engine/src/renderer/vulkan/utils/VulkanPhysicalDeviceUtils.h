@@ -5,7 +5,6 @@
 bool Revid::VulkanRenderer::isDeviceSuitable(VkPhysicalDevice device)
 {
     QueueFamilyIndices indices = findQueueFamilies(device);
-
     bool extensionsSupported = checkDeviceExtensionSupport(device);
 
     return indices.isComplete() && extensionsSupported;

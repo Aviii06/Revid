@@ -1,12 +1,16 @@
 #include "CustomWindow.h"
 #include <exceptions/RevidRuntimeException.h>
+#include <revid_engine/ServiceLocater.h>
 
-void Revid::CustomWindow::OpenWindow(WindowData windowData)
+void Revid::CustomWindow::OpenWindow(const WindowData& windowData)
 {
+	m_windowData.m_title = std::move(windowData.m_title);
+	m_windowData.m_height = windowData.m_height;
+	m_windowData.m_width = windowData.m_width;
     glfwInit();
 
     glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
-    glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
+    glfwWindowHint(GLFW_RESIZABLE, GLFW_TRUE);
     m_window = glfwCreateWindow(
         windowData.m_width,
         windowData.m_height,
@@ -14,6 +18,8 @@ void Revid::CustomWindow::OpenWindow(WindowData windowData)
 
     m_extensions = glfwGetRequiredInstanceExtensions(&m_extensionCount);
 
+    glfwSetWindowUserPointer(m_window, this);
+	glfwSetFramebufferSizeCallback(m_window, framebufferResizeCallback);
 }
 
 bool Revid::CustomWindow::Update()
@@ -48,13 +54,24 @@ void Revid::CustomWindow::GetDrawSurface(Map<SurfaceArgs, int*> surfaceArgs)
     }
 }
 
-std::pair<int, int> Revid::CustomWindow::GetSize()
-{
-	int width, height;
-	glfwGetFramebufferSize(m_window, &width, &height);
+// std::pair<int, int> Revid::CustomWindow::GetSize()
+// {
+// 	int width, height;
+// 	glfwGetFramebufferSize(m_window, &width, &height);
+//
+// 	return {width, height};
+// }
 
-	return {width, height};
+void Revid::CustomWindow::framebufferResizeCallback(GLFWwindow* window, int width, int height)
+{
+	auto m_window = reinterpret_cast<CustomWindow*>(glfwGetWindowUserPointer(window));
+	m_window->m_windowData.m_width = width;
+	m_window->m_windowData.m_height = height;
+	ServiceLocator::GetRenderer()->FramebufferResized();
 }
 
-
+void Revid::CustomWindow::WaitForEvents()
+{
+	glfwWaitEvents();
+}
 

@@ -23,3 +23,16 @@ target_include_directories(${PROJECT_NAME}
 target_link_libraries(${PROJECT_NAME}
         vendor
 )
+
+file (GLOB SHADERS assets/shaders/*.frag assets/shaders/*.vert)
+
+add_custom_command(TARGET ${PROJECT_NAME} PRE_BUILD
+        COMMAND mkdir -p ${CMAKE_BINARY_DIR}/editor/assets
+        COMMAND mkdir -p ${CMAKE_BINARY_DIR}/editor/assets/shaders)
+
+foreach(shader ${SHADERS})
+    get_filename_component(SHADER_NAME ${shader} NAME)
+
+    add_custom_command(TARGET ${PROJECT_NAME} PRE_BUILD
+            COMMAND glslc -c ${shader} -o ${CMAKE_BINARY_DIR}/editor/assets/shaders/${SHADER_NAME}.spv)
+endforeach()

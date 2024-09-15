@@ -7,7 +7,11 @@ set(SOURCES
         src/platform/CustomWindow.cpp
         src/Engine.cpp
         src/platform/Application.cpp
-        src/renderer/vulkan/VulkanRenderer.cpp)
+        src/renderer/vulkan/VulkanRenderer.cpp
+        src/renderer/vulkan/vulkan-core/VulkanPipeline.cpp
+        src/renderer/vulkan/vulkan-core/VulkanDevice.cpp
+        src/renderer/vulkan/vulkan-core/VulkanSwapchain.cpp
+        src/renderer/vulkan/vulkan-core/VulkanBuffer.cpp)
 add_library(${PROJECT_NAME} ${SOURCES})
 
 target_include_directories(${PROJECT_NAME}

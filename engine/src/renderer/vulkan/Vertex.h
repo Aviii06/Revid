@@ -1,23 +1,25 @@
 #pragma once
-#include <vulkan/vulkan.h>
 #include "maths/Vec.h"
-#include "renderer/vulkan/utils/VertexUtils.h"
+#include "types/Containers.h"
 
 namespace Revid
 {
-    struct SimpleVertex
+    struct Vertex
     {
         Maths::Vec2 m_position;
         Maths::Vec3 m_color;
 
-        static VkVertexInputBindingDescription GetBindingDescription()
+        static Vector<VkVertexInputBindingDescription> GetBindingDescriptions()
         {
-            VkVertexInputBindingDescription bindingDescription{};
-            bindingDescription.binding = 0;
-            bindingDescription.stride = sizeof(SimpleVertex);
-            bindingDescription.inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
+            Vector<VkVertexInputBindingDescription> bindingDescriptions(
+            1,
+                VkVertexInputBindingDescription{}
+            );
+            bindingDescriptions[0].binding = 0;
+            bindingDescriptions[0].stride = sizeof(Vertex);
+            bindingDescriptions[0].inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
 
-            return bindingDescription;
+            return bindingDescriptions;
         }
 
 
@@ -28,13 +30,13 @@ namespace Revid
             attributeDescriptions[0].binding = 0;
             attributeDescriptions[0].location = 0;
             attributeDescriptions[0].format = VK_FORMAT_R32G32_SFLOAT;
-            attributeDescriptions[0].offset = offsetof(SimpleVertex, m_position);
+            attributeDescriptions[0].offset = offsetof(Vertex, m_position);
 
 
             attributeDescriptions[1].binding = 0;
             attributeDescriptions[1].location = 1;
             attributeDescriptions[1].format = VK_FORMAT_R32G32B32_SFLOAT;
-            attributeDescriptions[1].offset = offsetof(SimpleVertex, m_color);
+            attributeDescriptions[1].offset = offsetof(Vertex, m_color);
 
             return attributeDescriptions;
         }

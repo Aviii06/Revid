@@ -8,6 +8,8 @@
 #include <limits>
 #include <set>
 #include <stdexcept>
+#include <exceptions/RevidRuntimeException.h>
+
 #include "types/Containers.h"
 
 namespace Revid
@@ -24,94 +26,87 @@ namespace Revid
 
 	void VulkanSwapchain::cleanupSyncObjects()
 	{
-		for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
+		for (size_t i = 0; i < m_maximumFrames; i++)
 		{
-			vkDestroySemaphore(m_device.device(), renderFinishedSemaphores[i], nullptr);
-			vkDestroySemaphore(m_device.device(), imageAvailableSemaphores[i], nullptr);
-			vkDestroyFence(m_device.device(), inFlightFences[i], nullptr);
+			vkDestroySemaphore(m_device.GetDevice(), m_renderFinishedSemaphores[i], nullptr);
+			vkDestroySemaphore(m_device.GetDevice(), m_imageAvailableSemaphores[i], nullptr);
+			vkDestroyFence(m_device.GetDevice(), m_inFlightFences[i], nullptr);
 		}
 	}
 
-	VkResult VulkanSwapchain::acquireNextImage(uint32_t* imageIndex)
+	VkResult VulkanSwapchain::acquireNextImage(uint32_t imageIndex)
 	{
 		vkWaitForFences(
-			m_device.device(),
+			m_device.GetDevice(),
 			1,
-			&inFlightFences[currentFrame],
+			&m_inFlightFences[m_currentFrame],
 			VK_TRUE,
 			std::numeric_limits<uint64_t>::max());
 
 		VkResult result = vkAcquireNextImageKHR(
-			m_device.device(),
-			swapChain,
-			std::numeric_limits<uint64_t>::max(),
-			imageAvailableSemaphores[currentFrame], // must be a not signaled semaphore
+			m_device.GetDevice(),
+			m_swapChain,
+			std::numeric_limits<uint64_t>::max() - 1,
+			m_imageAvailableSemaphores[m_currentFrame], // must be a not signaled semaphore
 			VK_NULL_HANDLE,
-			imageIndex);
+			&imageIndex);
 
 		return result;
 	}
 
-	VkResult VulkanSwapchain::submitCommandBuffers(const VkCommandBuffer* buffers, uint32_t* imageIndex)
+	VkResult VulkanSwapchain::submitCommandBuffers(const Vector<VkCommandBuffer>& buffers, uint32_t imageIndex)
 	{
-		if (imagesInFlight[*imageIndex] != VK_NULL_HANDLE)
-		{
-			vkWaitForFences(m_device.device(), 1, &imagesInFlight[*imageIndex], VK_TRUE, UINT64_MAX);
-		}
-		imagesInFlight[*imageIndex] = inFlightFences[currentFrame];
+		vkResetFences(m_device.GetDevice(), 1, &m_inFlightFences[m_currentFrame]);
 
-		VkSubmitInfo submitInfo = {};
+		vkResetCommandBuffer(buffers[m_currentFrame], 0);
+		recordCommandBuffer(buffers[m_currentFrame], imageIndex);
+
+		VkSubmitInfo submitInfo{};
 		submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
 
-		VkSemaphore waitSemaphores[] = { imageAvailableSemaphores[currentFrame] };
-		VkPipelineStageFlags waitStages[] = { VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT };
+		VkSemaphore waitSemaphores[] = {m_imageAvailableSemaphores[m_currentFrame]};
+		VkPipelineStageFlags waitStages[] = {VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT};
 		submitInfo.waitSemaphoreCount = 1;
 		submitInfo.pWaitSemaphores = waitSemaphores;
 		submitInfo.pWaitDstStageMask = waitStages;
 
 		submitInfo.commandBufferCount = 1;
-		submitInfo.pCommandBuffers = buffers;
+		submitInfo.pCommandBuffers = &buffers[m_currentFrame];
 
-		VkSemaphore signalSemaphores[] = { renderFinishedSemaphores[currentFrame] };
+		VkSemaphore signalSemaphores[] = {m_renderFinishedSemaphores[m_currentFrame]};
 		submitInfo.signalSemaphoreCount = 1;
 		submitInfo.pSignalSemaphores = signalSemaphores;
 
-		vkResetFences(m_device.device(), 1, &inFlightFences[currentFrame]);
-		if (vkQueueSubmit(m_device.graphicsQueue(), 1, &submitInfo, inFlightFences[currentFrame]) !=
-			VK_SUCCESS)
+		if (vkQueueSubmit(m_device.GetGraphicsQueue(), 1, &submitInfo, m_inFlightFences[m_currentFrame]) != VK_SUCCESS)
 		{
-			throw std::runtime_error("failed to submit draw command buffer!");
+			throw RevidRuntimeException("failed to submit draw command buffer!");
 		}
 
-		VkPresentInfoKHR presentInfo = {};
+		VkPresentInfoKHR presentInfo{};
 		presentInfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
 
 		presentInfo.waitSemaphoreCount = 1;
 		presentInfo.pWaitSemaphores = signalSemaphores;
 
-		VkSwapchainKHR swapChains[] = { swapChain };
+		VkSwapchainKHR swapChains[] = {m_swapChain};
 		presentInfo.swapchainCount = 1;
 		presentInfo.pSwapchains = swapChains;
 
-		presentInfo.pImageIndices = imageIndex;
+		presentInfo.pImageIndices = &imageIndex;
+		VkResult res = vkQueuePresentKHR(m_device.GetGraphicsQueue(), &presentInfo);
 
-		auto result = vkQueuePresentKHR(m_device.presentQueue(), &presentInfo);
 
-		currentFrame = (currentFrame + 1) % MAX_FRAMES_IN_FLIGHT;
+		if (res == VK_ERROR_OUT_OF_DATE_KHR || res == VK_SUBOPTIMAL_KHR) {
+			recreateSwapChain();
+		} else if (res != VK_SUCCESS) {
+			throw std::runtime_error("failed to present swap chain image!");
+		}
 
-		return result;
+		m_currentFrame = (m_currentFrame + 1) % m_maximumFrames;
 	}
 
 	void VulkanSwapchain::createSwapChain()
 	{
-		// TODO That's all it takes to recreate the swap chain! However, the
-		// disadvantage of this approach is that we need to stop all rendering
-		// before creating the new swap chain. It is possible to create a new swap
-		// chain while drawing commands on an image from the old swap chain are
-		// still in-flight. You need to pass the previous swap chain to the
-		// oldSwapChain field in the VkSwapchainCreateInfoKHR struct and destroy the
-		// old swap chain as soon as you've finished using it. Also might be the
-		// reason frame drops on resizing or moving the window
 		SwapChainSupportDetails swapChainSupport = m_device.getSwapChainSupport();
 
 		VkSurfaceFormatKHR surfaceFormat = chooseSwapSurfaceFormat(swapChainSupport.formats);
@@ -127,7 +122,7 @@ namespace Revid
 
 		VkSwapchainCreateInfoKHR createInfo = {};
 		createInfo.sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR;
-		createInfo.surface = m_device.surface();
+		createInfo.surface = m_device.GetSurface();
 
 		createInfo.minImageCount = imageCount;
 		createInfo.imageFormat = surfaceFormat.format;
@@ -160,7 +155,7 @@ namespace Revid
 
 		createInfo.oldSwapchain = VK_NULL_HANDLE;
 
-		if (vkCreateSwapchainKHR(m_device.device(), &createInfo, nullptr, &swapChain) != VK_SUCCESS)
+		if (vkCreateSwapchainKHR(m_device.GetDevice(), &createInfo, nullptr, &m_swapChain) != VK_SUCCESS)
 		{
 			throw std::runtime_error("failed to create swap chain!");
 		}
@@ -169,9 +164,9 @@ namespace Revid
 		// allowed to create a swap chain with more. That's why we'll first query the final number of
 		// images with vkGetSwapchainImagesKHR, then resize the container and finally call it again to
 		// retrieve the handles.
-		vkGetSwapchainImagesKHR(m_device.device(), swapChain, &imageCount, nullptr);
+		vkGetSwapchainImagesKHR(m_device.GetDevice(), m_swapChain, &imageCount, nullptr);
 		swapChainImages.resize(imageCount);
-		vkGetSwapchainImagesKHR(m_device.device(), swapChain, &imageCount, swapChainImages.data());
+		vkGetSwapchainImagesKHR(m_device.GetDevice(), m_swapChain, &imageCount, swapChainImages.data());
 
 		m_swapChainImageFormat = surfaceFormat.format;
 		m_swapChainExtent = extent;
@@ -184,7 +179,7 @@ namespace Revid
 		{
 			ServiceLocator::GetWindow()->WaitForEvents();
 		}
-		vkDeviceWaitIdle(m_device.device());
+		vkDeviceWaitIdle(m_device.GetDevice());
 		cleanupSwapChain();
 		createSwapChain();
 		createImageViews();
@@ -209,7 +204,7 @@ namespace Revid
 			viewInfo.subresourceRange.baseArrayLayer = 0;
 			viewInfo.subresourceRange.layerCount = 1;
 
-			if (vkCreateImageView(m_device.device(), &viewInfo, nullptr, &swapChainImageViews[i]) !=
+			if (vkCreateImageView(m_device.GetDevice(), &viewInfo, nullptr, &swapChainImageViews[i]) !=
 				VK_SUCCESS)
 			{
 				throw std::runtime_error("failed to create texture image view!");
@@ -221,29 +216,29 @@ namespace Revid
 	{
 		for (auto imageView : swapChainImageViews)
 		{
-			vkDestroyImageView(m_device.device(), imageView, nullptr);
+			vkDestroyImageView(m_device.GetDevice(), imageView, nullptr);
 		}
 		swapChainImageViews.clear();
 
-		if (swapChain != nullptr)
+		if (m_swapChain != nullptr)
 		{
-			vkDestroySwapchainKHR(m_device.device(), swapChain, nullptr);
-			swapChain = nullptr;
+			vkDestroySwapchainKHR(m_device.GetDevice(), m_swapChain, nullptr);
+			m_swapChain = nullptr;
 		}
 
 		for (int i = 0; i < depthImages.size(); i++)
 		{
-			vkDestroyImageView(m_device.device(), depthImageViews[i], nullptr);
-			vkDestroyImage(m_device.device(), depthImages[i], nullptr);
-			vkFreeMemory(m_device.device(), depthImageMemorys[i], nullptr);
+			vkDestroyImageView(m_device.GetDevice(), depthImageViews[i], nullptr);
+			vkDestroyImage(m_device.GetDevice(), depthImages[i], nullptr);
+			vkFreeMemory(m_device.GetDevice(), depthImageMemorys[i], nullptr);
 		}
 
 		for (auto framebuffer : m_swapChainFramebuffers)
 		{
-			vkDestroyFramebuffer(m_device.device(), framebuffer, nullptr);
+			vkDestroyFramebuffer(m_device.GetDevice(), framebuffer, nullptr);
 		}
 
-		vkDestroyRenderPass(m_device.device(), renderPass, nullptr);
+		vkDestroyRenderPass(m_device.GetDevice(), m_renderPass, nullptr);
 	}
 
 	void VulkanSwapchain::createRenderPass()
@@ -309,7 +304,7 @@ namespace Revid
 		renderPassInfo.dependencyCount = 1;
 		renderPassInfo.pDependencies = &dependency;
 
-		if (vkCreateRenderPass(m_device.device(), &renderPassInfo, nullptr, &renderPass) != VK_SUCCESS)
+		if (vkCreateRenderPass(m_device.GetDevice(), &renderPassInfo, nullptr, &m_renderPass) != VK_SUCCESS)
 		{
 			throw std::runtime_error("failed to create render pass!");
 		}
@@ -325,7 +320,7 @@ namespace Revid
 			VkExtent2D swapChainExtent = getSwapChainExtent();
 			VkFramebufferCreateInfo framebufferInfo = {};
 			framebufferInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
-			framebufferInfo.renderPass = renderPass;
+			framebufferInfo.renderPass = m_renderPass;
 			framebufferInfo.attachmentCount = static_cast<uint32_t>(attachments.size());
 			framebufferInfo.pAttachments = attachments.data();
 			framebufferInfo.width = swapChainExtent.width;
@@ -333,7 +328,7 @@ namespace Revid
 			framebufferInfo.layers = 1;
 
 			if (vkCreateFramebuffer(
-				m_device.device(),
+				m_device.GetDevice(),
 				&framebufferInfo,
 				nullptr,
 				&m_swapChainFramebuffers[i]) != VK_SUCCESS)
@@ -387,7 +382,7 @@ namespace Revid
 			viewInfo.subresourceRange.baseArrayLayer = 0;
 			viewInfo.subresourceRange.layerCount = 1;
 
-			if (vkCreateImageView(m_device.device(), &viewInfo, nullptr, &depthImageViews[i]) !=
+			if (vkCreateImageView(m_device.GetDevice(), &viewInfo, nullptr, &depthImageViews[i]) !=
 				VK_SUCCESS)
 			{
 				throw std::runtime_error("failed to create texture image view!");
@@ -397,9 +392,9 @@ namespace Revid
 
 	void VulkanSwapchain::createSyncObjects()
 	{
-		imageAvailableSemaphores.resize(MAX_FRAMES_IN_FLIGHT);
-		renderFinishedSemaphores.resize(MAX_FRAMES_IN_FLIGHT);
-		inFlightFences.resize(MAX_FRAMES_IN_FLIGHT);
+		m_imageAvailableSemaphores.resize(m_maximumFrames);
+		m_renderFinishedSemaphores.resize(m_maximumFrames);
+		m_inFlightFences.resize(m_maximumFrames);
 		imagesInFlight.resize(imageCount(), VK_NULL_HANDLE);
 
 		VkSemaphoreCreateInfo semaphoreInfo = {};
@@ -409,19 +404,19 @@ namespace Revid
 		fenceInfo.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
 		fenceInfo.flags = VK_FENCE_CREATE_SIGNALED_BIT;
 
-		for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
+		for (size_t i = 0; i < m_maximumFrames; i++)
 		{
 			if (vkCreateSemaphore(
-					m_device.device(),
+					m_device.GetDevice(),
 					&semaphoreInfo,
 					nullptr,
-					&imageAvailableSemaphores[i]) != VK_SUCCESS ||
+					&m_imageAvailableSemaphores[i]) != VK_SUCCESS ||
 				vkCreateSemaphore(
-					m_device.device(),
+					m_device.GetDevice(),
 					&semaphoreInfo,
 					nullptr,
-					&renderFinishedSemaphores[i]) != VK_SUCCESS ||
-				vkCreateFence(m_device.device(), &fenceInfo, nullptr, &inFlightFences[i]) != VK_SUCCESS)
+					&m_renderFinishedSemaphores[i]) != VK_SUCCESS ||
+				vkCreateFence(m_device.GetDevice(), &fenceInfo, nullptr, &m_inFlightFences[i]) != VK_SUCCESS)
 			{
 				throw std::runtime_error("failed to create synchronization objects for a frame!");
 			}
@@ -484,6 +479,55 @@ namespace Revid
 			std::min(capabilities.maxImageExtent.height, actualExtent.height));
 
 		return actualExtent;
+	}
+
+	void VulkanSwapchain::recordCommandBuffer(const VkCommandBuffer& commandBuffer, uint32_t imageIndex)
+	{
+		VkCommandBufferBeginInfo beginInfo{};
+		beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+
+		if (vkBeginCommandBuffer(commandBuffer, &beginInfo) != VK_SUCCESS)
+		{
+			throw std::runtime_error("failed to begin recording command buffer!");
+		}
+
+		VkRenderPassBeginInfo renderPassInfo{};
+		renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
+		renderPassInfo.renderPass = m_renderPass;
+		renderPassInfo.framebuffer = m_swapChainFramebuffers[imageIndex];
+		renderPassInfo.renderArea.offset = {0, 0};
+		renderPassInfo.renderArea.extent = m_swapChainExtent;
+
+		VkClearValue clearColor = {{{0.0f, 0.0f, 0.0f, 1.0f}}};
+		renderPassInfo.clearValueCount = 1;
+		renderPassInfo.pClearValues = &clearColor;
+
+		vkCmdBeginRenderPass(commandBuffer, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
+
+		vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, );
+
+		VkViewport viewport{};
+		viewport.x = 0.0f;
+		viewport.y = 0.0f;
+		viewport.width = (float) m_swapChainExtent.width;
+		viewport.height = (float) m_swapChainExtent.height;
+		viewport.minDepth = 0.0f;
+		viewport.maxDepth = 1.0f;
+		vkCmdSetViewport(commandBuffer, 0, 1, &viewport);
+
+		VkRect2D scissor{};
+		scissor.offset = {0, 0};
+		scissor.extent = m_swapChainExtent;
+		vkCmdSetScissor(commandBuffer, 0, 1, &scissor);
+
+		vkCmdDraw(commandBuffer, 3, 1, 0, 0);
+
+		vkCmdEndRenderPass(commandBuffer);
+
+		if (vkEndCommandBuffer(commandBuffer) != VK_SUCCESS)
+		{
+			throw RevidRuntimeException("failed to record command buffer!");
+		}
 	}
 
 	VkFormat VulkanSwapchain::findDepthFormat()

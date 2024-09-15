@@ -1,6 +1,7 @@
 #pragma once
 
 #include "VulkanDevice.h"
+#include "renderer/vulkan/Vertex.h"
 
 // libs
 #define GLM_FORCE_RADIANS
@@ -15,24 +16,7 @@ namespace Revid {
 
     class VulkanBuffer {
     public:
-        struct Vertex {
-            glm::vec2 position;
-
-            static std::vector<VkVertexInputBindingDescription> getBindingDescriptions() {
-                std::vector<VkVertexInputBindingDescription> bindingDescriptions(
-                    1,
-                    VkVertexInputBindingDescription{});
-
-                bindingDescriptions[0].binding = 0;
-                bindingDescriptions[0].stride = sizeof(Vertex);
-                bindingDescriptions[0].inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
-                return bindingDescriptions;
-            }
-
-            static std::vector<VkVertexInputAttributeDescription> getAttributeDescriptions();
-        };
-
-        VulkanBuffer(VulkanDevice& device);
+        VulkanBuffer(VulkanDevice&);
         ~VulkanBuffer() { cleanup(); }
 
         VulkanBuffer(const VulkanBuffer&) = delete;
@@ -44,11 +28,14 @@ namespace Revid {
     private:
         VulkanDevice& m_device;
 
-        VkBuffer vertexBuffer;
-        VkDeviceMemory vertexBufferMemory;
-        uint32_t vertexCount;
-        std::vector<Vertex> vertices = {{{0.0f, -0.5f}}, {{0.5f, 0.5f}}, {{-0.5f, 0.5f}}};
-
+        VkBuffer m_vertexBuffer;
+        VkDeviceMemory m_vertexBufferMemory;
+        uint32_t m_vertexCount;
+        std::vector<Vertex> m_vertices = {
+            {{0.0f, -0.5f}, {1.0, 0.0 ,0.0}},
+            {{0.5f, 0.5f}, {0.0, 1.0, 0.0}},
+            {{-0.5f, 0.5f}, {0.0, 0.0, 1.0}}
+        };
         void createVertexBuffer();
         void cleanup();
     };

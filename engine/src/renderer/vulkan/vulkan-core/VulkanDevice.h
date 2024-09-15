@@ -41,11 +41,11 @@ namespace Revid
         VulkanDevice(VulkanDevice&&) = delete;
         VulkanDevice& operator=(VulkanDevice&&) = delete;
 
-        VkCommandPool getCommandPool() { return m_commandPool; }
-        VkDevice device() { return m_device; }
-        VkSurfaceKHR surface() { return m_surface; }
-        VkQueue graphicsQueue() { return m_graphicsQueue; }
-        VkQueue presentQueue() { return m_presentQueue; }
+        VkCommandPool GetCommandPool() { return m_commandPool; }
+        VkDevice GetDevice() { return m_device; }
+        VkSurfaceKHR GetSurface() { return m_surface; }
+        VkQueue GetGraphicsQueue() { return m_graphicsQueue; }
+        VkQueue GetPresentQueue() { return m_presentQueue; }
 
         SwapChainSupportDetails getSwapChainSupport() { return querySwapChainSupport(m_physicalDevice); }
         uint32_t findMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties);

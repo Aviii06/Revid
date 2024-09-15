@@ -26,7 +26,8 @@ namespace Revid
 
     private:
         VulkanDevice m_device;
-        VulkanSwapchain m_swapchain{m_device};
+        RendererSettings m_rendererSettings;
+        Ptr<VulkanSwapchain> m_swapchain = nullptr;
         VkPipelineLayout m_pipelineLayout;
         Ptr<VulkanPipeline> m_simplePipeline;
         Vector<VkCommandBuffer> m_commandBuffers;

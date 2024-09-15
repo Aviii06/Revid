@@ -2,8 +2,9 @@
 
 #include <exceptions/RevidRuntimeException.h>
 
-void Revid::VulkanRenderer::Init(const RendererSettings&)
+void Revid::VulkanRenderer::Init(const RendererSettings& rendererSettings)
 {
+	m_swapchain = MakePtr<VulkanSwapchain>(m_device, rendererSettings.MAX_FRAMES_IN_FLIGHT);
 	createPipelineLayout();
 	createPipeline();
 	createCommandBuffers();
@@ -12,10 +13,10 @@ void Revid::VulkanRenderer::Init(const RendererSettings&)
 
 void Revid::VulkanRenderer::Shutdown()
 {
-	vkDestroyPipelineLayout(m_device.device(), m_pipelineLayout, nullptr);
+	vkDestroyPipelineLayout(m_device.GetDevice(), m_pipelineLayout, nullptr);
 	vkFreeCommandBuffers(
-		m_device.device(),
-		m_device.getCommandPool(),
+		m_device.GetDevice(),
+		m_device.GetCommandPool(),
 		static_cast<uint32_t>(m_commandBuffers.size()),
 		m_commandBuffers.data());
 	m_commandBuffers.clear();
@@ -24,14 +25,19 @@ void Revid::VulkanRenderer::Shutdown()
 void Revid::VulkanRenderer::Render()
 {
 	uint32_t imageIndex;
-	auto result = m_swapchain.acquireNextImage(&imageIndex);
-	if (result != VK_SUCCESS && result != VK_SUBOPTIMAL_KHR)
+	auto res = m_swapchain->acquireNextImage(imageIndex);
+	if (res == VK_ERROR_OUT_OF_DATE_KHR ||  res == VK_SUBOPTIMAL_KHR || m_framebufferResized)
 	{
-		throw std::runtime_error("failed to acquire swap chain image");
+		m_framebufferResized = false;
+		m_swapchain->recreateSwapChain();
+	}
+	else if (res != VK_SUCCESS)
+	{
+		throw RevidRuntimeException("failed to acquire swap chain image!");
 	}
 
-	result = m_swapchain.submitCommandBuffers(&m_commandBuffers[imageIndex], &imageIndex);
-	if (result != VK_SUCCESS)
+	res = m_swapchain->submitCommandBuffers(m_commandBuffers, imageIndex);
+	if (res != VK_SUCCESS)
 	{
 		throw std::runtime_error("failed to present swap chain image!");
 	}
@@ -45,7 +51,7 @@ void Revid::VulkanRenderer::createPipelineLayout()
 	pipelineLayoutInfo.pSetLayouts = nullptr;
 	pipelineLayoutInfo.pushConstantRangeCount = 0;
 	pipelineLayoutInfo.pPushConstantRanges = nullptr;
-	if (vkCreatePipelineLayout(m_device.device(), &pipelineLayoutInfo, nullptr, &m_pipelineLayout) !=
+	if (vkCreatePipelineLayout(m_device.GetDevice(), &pipelineLayoutInfo, nullptr, &m_pipelineLayout) !=
 		VK_SUCCESS)
 	{
 		throw RevidRuntimeException("failed to create pipeline layout!");
@@ -54,8 +60,8 @@ void Revid::VulkanRenderer::createPipelineLayout()
 
 void Revid::VulkanRenderer::createPipeline()
 {
-	auto pipelineConfig = VulkanPipeline::defaultPipelineConfigInfo(m_swapchain.width(), m_swapchain.height());
-	pipelineConfig.renderPass = m_swapchain.getRenderPass();
+	auto pipelineConfig = VulkanPipeline::defaultPipelineConfigInfo(m_swapchain->width(), m_swapchain->height());
+	pipelineConfig.renderPass = m_swapchain->getRenderPass();
 	pipelineConfig.pipelineLayout = m_pipelineLayout;
 	m_simplePipeline = MakePtr<VulkanPipeline>(
 		m_device,
@@ -66,14 +72,14 @@ void Revid::VulkanRenderer::createPipeline()
 
 void Revid::VulkanRenderer::createCommandBuffers()
 {
-	m_commandBuffers.resize(m_swapchain.imageCount());
+	m_commandBuffers.resize(m_swapchain->imageCount());
 	VkCommandBufferAllocateInfo allocInfo{};
 	allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
-	allocInfo.commandPool = m_device.getCommandPool();
+	allocInfo.commandPool = m_device.GetCommandPool();
 	allocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
 	allocInfo.commandBufferCount = static_cast<uint32_t>(m_commandBuffers.size());
 
-	if (vkAllocateCommandBuffers(m_device.device(), &allocInfo, m_commandBuffers.data()) !=
+	if (vkAllocateCommandBuffers(m_device.GetDevice(), &allocInfo, m_commandBuffers.data()) !=
 		VK_SUCCESS) {
 		throw std::runtime_error("failed to allocate command buffers!");
 		}
@@ -89,11 +95,11 @@ void Revid::VulkanRenderer::createCommandBuffers()
 		}
 		VkRenderPassBeginInfo renderPassInfo = {};
 		renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
-		renderPassInfo.renderPass = m_swapchain.getRenderPass();
-		renderPassInfo.framebuffer = m_swapchain.getFrameBuffer(i);
+		renderPassInfo.renderPass = m_swapchain->getRenderPass();
+		renderPassInfo.framebuffer = m_swapchain->getFrameBuffer(i);
 
 		renderPassInfo.renderArea.offset = {0, 0};
-		renderPassInfo.renderArea.extent = m_swapchain.getSwapChainExtent();
+		renderPassInfo.renderArea.extent = m_swapchain->getSwapChainExtent();
 
 		std::array<VkClearValue, 2> clearValues{};
 		clearValues[0].color = {0.1f, 0.1f, 0.1f, 1.0f};

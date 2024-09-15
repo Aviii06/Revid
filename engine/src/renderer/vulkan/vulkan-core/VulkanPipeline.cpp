@@ -21,9 +21,9 @@ VulkanPipeline::VulkanPipeline(
 }
 
 VulkanPipeline::~VulkanPipeline() {
-  vkDestroyShaderModule(m_device.device(), m_fragShaderModule, nullptr);
-  vkDestroyShaderModule(m_device.device(), m_vertShaderModule, nullptr);
-  vkDestroyPipeline(m_device.device(), m_graphicsPipeline, nullptr);
+  vkDestroyShaderModule(m_device.GetDevice(), m_fragShaderModule, nullptr);
+  vkDestroyShaderModule(m_device.GetDevice(), m_vertShaderModule, nullptr);
+  vkDestroyPipeline(m_device.GetDevice(), m_graphicsPipeline, nullptr);
 }
 
 void VulkanPipeline::createGraphicsPipeline(
@@ -59,8 +59,8 @@ void VulkanPipeline::createGraphicsPipeline(
   shaderStages[1].pNext = nullptr;
   shaderStages[1].pSpecializationInfo = nullptr;
 
-  auto bindingDescriptions = VulkanBuffer::Vertex::getBindingDescriptions();
-  auto attributeDescriptions = VulkanBuffer::Vertex::getAttributeDescriptions();
+  auto bindingDescriptions = Vertex::GetBindingDescriptions();
+  auto attributeDescriptions = Vertex::GetAttributeDescriptions();
   VkPipelineVertexInputStateCreateInfo vertexInputInfo{};
   vertexInputInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
   vertexInputInfo.vertexBindingDescriptionCount = static_cast<uint32_t>(bindingDescriptions.size());
@@ -90,7 +90,7 @@ void VulkanPipeline::createGraphicsPipeline(
   pipelineInfo.basePipelineIndex = -1;               // Optional
 
   if (vkCreateGraphicsPipelines(
-          m_device.device(),
+          m_device.GetDevice(),
           VK_NULL_HANDLE,
           1,
           &pipelineInfo,
@@ -99,8 +99,8 @@ void VulkanPipeline::createGraphicsPipeline(
     throw std::runtime_error("failed to create graphics pipeline!");
   }
 
-  vkDestroyShaderModule(m_device.device(), m_fragShaderModule, nullptr);
-  vkDestroyShaderModule(m_device.device(), m_vertShaderModule, nullptr);
+  vkDestroyShaderModule(m_device.GetDevice(), m_fragShaderModule, nullptr);
+  vkDestroyShaderModule(m_device.GetDevice(), m_vertShaderModule, nullptr);
   m_fragShaderModule = VK_NULL_HANDLE;
   m_vertShaderModule = VK_NULL_HANDLE;
 }
@@ -111,7 +111,7 @@ void VulkanPipeline::createShaderModule(const std::vector<char>& code, VkShaderM
   createInfo.codeSize = code.size();
   createInfo.pCode = reinterpret_cast<const uint32_t*>(code.data());
 
-  if (vkCreateShaderModule(m_device.device(), &createInfo, nullptr, shaderModule) != VK_SUCCESS) {
+  if (vkCreateShaderModule(m_device.GetDevice(), &createInfo, nullptr, shaderModule) != VK_SUCCESS) {
     throw std::runtime_error("failed to create shader module");
   }
 }

@@ -21,6 +21,7 @@ namespace Revid
         void Shutdown() override;
         void GetDrawSurface(Map<SurfaceArgs, int*>) override;
         void WaitForEvents() override;
+        bool IsKeyPressed(int key) override;
     };
 }
 

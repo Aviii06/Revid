@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cmath>
+#include <glm/glm.hpp>
 #include "VectorOperatorMixin.h"
 
 /*!
@@ -85,6 +86,7 @@ namespace Revid::Maths
 
 		friend Vec3 operator*(const Vec3& a, float scalar) { return Vec3(a.x * scalar, a.y * scalar, a.z * scalar); }
 		friend Vec3 operator+(const Vec3& a, const Vec3& other) { return Vec3(a.x + other.x, a.y + other.y, a.z + other.z); }
+		glm::vec3 ToGLM() { return glm::vec3(x, y, z); }
 	};
 
 	/*!

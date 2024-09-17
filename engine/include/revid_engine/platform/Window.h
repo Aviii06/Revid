@@ -35,5 +35,7 @@ namespace Revid
         virtual void WaitForEvents() = 0;
 
         virtual void GetDrawSurface(Map<SurfaceArgs, int*>) = 0;
+
+        virtual bool IsKeyPressed(int key) = 0;
     };
 }

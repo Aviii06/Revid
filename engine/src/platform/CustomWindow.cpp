@@ -35,6 +35,14 @@ void Revid::CustomWindow::Shutdown()
     glfwTerminate();
 }
 
+bool Revid::CustomWindow::IsKeyPressed(int key)
+{
+	int state = glfwGetKey(m_window, key);
+
+	return state == GLFW_PRESS || state == GLFW_REPEAT;
+}
+
+
 void Revid::CustomWindow::GetDrawSurface(Map<SurfaceArgs, int*> surfaceArgs)
 {
     auto vkInstance = reinterpret_cast<VkInstance>(surfaceArgs[SurfaceArgs::INSTANCE]);

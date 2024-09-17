@@ -7,7 +7,8 @@ set(SOURCES
         src/platform/CustomWindow.cpp
         src/Engine.cpp
         src/platform/Application.cpp
-        src/renderer/vulkan/VulkanRenderer.cpp)
+        src/renderer/vulkan/VulkanRenderer.cpp
+        include/revid_engine/platform/Camera.cpp)
 add_library(${PROJECT_NAME} ${SOURCES})
 
 target_include_directories(${PROJECT_NAME}

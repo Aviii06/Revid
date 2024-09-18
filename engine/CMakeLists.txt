@@ -29,7 +29,8 @@ file (GLOB SHADERS assets/shaders/*.frag assets/shaders/*.vert)
 
 add_custom_command(TARGET ${PROJECT_NAME} PRE_BUILD
         COMMAND mkdir -p ${CMAKE_BINARY_DIR}/editor/assets
-        COMMAND mkdir -p ${CMAKE_BINARY_DIR}/editor/assets/shaders)
+        COMMAND mkdir -p ${CMAKE_BINARY_DIR}/editor/assets/shaders
+        COMMAND mkdir -p ${CMAKE_BINARY_DIR}/editor/assets/obj)
 
 foreach(shader ${SHADERS})
     get_filename_component(SHADER_NAME ${shader} NAME)
@@ -37,3 +38,5 @@ foreach(shader ${SHADERS})
     add_custom_command(TARGET ${PROJECT_NAME} PRE_BUILD
             COMMAND glslc -c ${shader} -o ${CMAKE_BINARY_DIR}/editor/assets/shaders/${SHADER_NAME}.spv)
 endforeach()
+
+#file (COPY SHADERS assets/obj/bunny.obj ${CMAKE_BINARY_DIR}/editor/assets/obj/bunny.obj)

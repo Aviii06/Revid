@@ -34,6 +34,9 @@ namespace Revid
         void Init(const RendererSettings&) override;
         void Shutdown() override;
         void Render() override;
+        void UpdateVertices(Vector<SimpleVertex>) override;
+        void UpdateIndices(Vector<uint16_t>) override;
+        void UpdateObj(String path) override;
 
     private:
         void createInstance();
@@ -168,7 +171,7 @@ namespace Revid
           {{-0.5f, 0.5f, -0.5f}, {1.0f, 1.0f, 1.0f}}
         };
 
-        const std::vector<uint16_t> m_indices = {
+        Vector<uint16_t> m_indices = {
             // UP
             0, 1, 2,
             2, 3, 0,

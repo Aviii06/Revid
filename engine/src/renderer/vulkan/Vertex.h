@@ -9,7 +9,10 @@ namespace Revid
     struct SimpleVertex
     {
         Maths::Vec3 m_position;
+        // Maths::Vec3 m_normal;
+        // Maths::Vec3 m_tangent;
         Maths::Vec3 m_color;
+        // Maths::Vec2 m_texcoord;
 
         static VkVertexInputBindingDescription GetBindingDescription()
         {

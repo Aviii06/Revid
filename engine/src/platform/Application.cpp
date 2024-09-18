@@ -15,6 +15,8 @@ Revid::Application::Application(String title)
     Logger::Log(LogLevel::INFO, "Initialising Revid Application named: " + title);
     initializeLogger();
     intializeServices();
+
+	ServiceLocator::GetRenderer()->UpdateObj("./assets/obj/bunny.obj");
 }
 
 Revid::Application::~Application()
@@ -51,7 +53,6 @@ void Revid::Application::Run()
     	{
     		ServiceLocator::GetCamera()->MoveRight();
     	}
-
 
         ServiceLocator::GetRenderer()->Render();
     }

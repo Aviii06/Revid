@@ -8,7 +8,7 @@ namespace Revid
 {
 
 	EditorCamera::EditorCamera()
-		: EditorCamera(60.0f, 1.7778f, 0.1f, 5000.f)
+		: EditorCamera(60.0f, 1.7778f, 0.1f, 50000.f)
 	{
 	}
 

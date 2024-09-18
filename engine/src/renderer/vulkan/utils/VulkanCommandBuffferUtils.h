@@ -47,7 +47,7 @@ inline void Revid::VulkanRenderer::recordCommandBuffer(const VkCommandBuffer& co
 
     // vkCmdDraw(commandBuffer, static_cast<uint32_t>(m_vertices.size()), 1, 0, 0);
     vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipelineLayout, 0, 1, &m_descriptorSets[m_currentFrame], 0, nullptr);
-    vkCmdDrawIndexed(commandBuffer, static_cast<uint32_t>(m_indices.size()), 1, 0, 0, 0);
+    vkCmdDrawIndexed(commandBuffer, static_cast<uint32_t>(m_indices.size()), 1000, 0, 0, 0);
 
     // vkCmdDraw(commandBuffer, 3, 1, 0, 0);
 

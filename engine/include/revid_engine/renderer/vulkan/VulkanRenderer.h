@@ -1,8 +1,9 @@
 #pragma once
 #define GLFW_INCLUDE_VULKAN
-#include <revid_engine/renderer/Renderer.h>
 #include <vulkan/vulkan.h>
 #include "Vertex.h"
+#include "VertexBuffer.h"
+#include "types/Containers.h"
 #include "types/SmartPointers.h"
 
 struct UniformBufferObject {
@@ -13,6 +14,14 @@ struct UniformBufferObject {
 
 namespace Revid
 {
+    struct RendererSettings
+    {
+        uint8_t MAX_FRAMES_IN_FLIGHT;
+        String appName;
+        const char** windowExtentions;
+        uint32_t windowExtentionCount;
+    };
+
     struct QueueFamilyIndices {
         std::optional<uint32_t> graphicsFamily;
         std::optional<uint32_t> presentFamily;
@@ -28,15 +37,22 @@ namespace Revid
         std::vector<VkPresentModeKHR> presentModes;
     };
 
-    class VulkanRenderer : public Renderer
+    class VulkanRenderer
     {
     public:
-        void Init(const RendererSettings&) override;
-        void Shutdown() override;
-        void Render() override;
-        void UpdateVertices(Vector<SimpleVertex>) override;
-        void UpdateIndices(Vector<uint16_t>) override;
-        void UpdateObj(String path) override;
+        VulkanRenderer();
+		void FramebufferResized() { m_framebufferResized = true; }
+        void Init(const RendererSettings&);
+        void Shutdown();
+        void Render();
+        void BindVertexBuffer(Ref<VertexBuffer> vb);
+        void UpdateIndices(Vector<uint16_t>);
+        //void UpdateObj(String path);
+
+        VkDevice GetDevice() { return m_device; }
+        VkCommandPool GetCommandPool() { return m_commandPool; }
+        VkPhysicalDevice GetPhysicalDevice() { return m_physicalDevice; }
+        VkQueue GetGraphicsQueue() { return m_graphicsQueue; }
 
     private:
         void createInstance();
@@ -95,7 +111,8 @@ namespace Revid
         VkShaderModule createShaderModule(const std::vector<char>& code);
         void recordCommandBuffer(const VkCommandBuffer& commandBuffer, uint32_t imageIndex);
 
-        void createBuffer(VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties, VkBuffer& buffer, VkDeviceMemory& bufferMemory);
+        void createBuffer(VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties,
+            VkBuffer& buffer, VkDeviceMemory& bufferMemory);
         uint32_t findMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties);
         void copyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size);
         void updateUniformBuffer(uint32_t currentImage);
@@ -117,13 +134,13 @@ namespace Revid
         VkQueue m_presentQueue;
         VkSurfaceKHR m_surface;
 		VkSwapchainKHR m_swapChain;
-        std::vector<VkImage> m_swapChainImages;
+        Vector<VkImage> m_swapChainImages;
         VkFormat m_swapChainImageFormat;
         VkExtent2D m_swapChainExtent;
         VkPipelineLayout m_pipelineLayout;
         VkRenderPass m_renderPass;
-        std::vector<VkImageView> m_swapChainImageViews;
-        std::vector<VkFramebuffer> m_swapChainFramebuffers;
+        Vector<VkImageView> m_swapChainImageViews;
+        Vector<VkFramebuffer> m_swapChainFramebuffers;
         VkCommandPool m_commandPool;
         Vector<VkCommandBuffer> m_commandBuffers;
         VkPipeline m_graphicsPipeline;
@@ -144,10 +161,8 @@ namespace Revid
         Vector<VkFence> m_inFlightFences;
 
         // Vertext Buffer
-        VkBuffer m_vertexBuffer;
-        size_t m_vertexCount;
-        VkDeviceMemory m_vertexBufferMemory;
         VkDescriptorSetLayout m_descriptorSetLayout;
+        Ref<VertexBuffer> m_vertexBuffer;
 
         VkBuffer m_indexBuffer;
         VkDeviceMemory m_indexBufferMemory;
@@ -157,19 +172,6 @@ namespace Revid
         std::vector<void*> m_uniformBuffersMapped;
         VkDescriptorPool m_descriptorPool;
         Vector<VkDescriptorSet> m_descriptorSets;
-
-
-        Vector<SimpleVertex> m_vertices = {
-            {{-0.5f, -0.5f, 0.5f}, {1.0f, 0.0f, 0.0f}},
-          {{0.5f, -0.5f, 0.5f}, {0.0f, 1.0f, 0.0f}},
-          {{0.5f, 0.5f, 0.5f}, {0.0f, 0.0f, 1.0f}},
-          {{-0.5f, 0.5f, 0.5f}, {1.0f, 1.0f, 1.0f}},
-
-            {{-0.5f, -0.5f, -0.5f}, {1.0f, 0.0f, 0.0f}},
-          {{0.5f, -0.5f, -0.5f}, {0.0f, 1.0f, 0.0f}},
-          {{0.5f, 0.5f, -0.5f}, {0.0f, 0.0f, 1.0f}},
-          {{-0.5f, 0.5f, -0.5f}, {1.0f, 1.0f, 1.0f}}
-        };
 
         Vector<uint16_t> m_indices = {
             // UP
@@ -195,7 +197,8 @@ namespace Revid
             //BACK
             3, 7, 0,
             4, 0, 7
-
         };
+
+		bool m_framebufferResized = false;
     };
 }

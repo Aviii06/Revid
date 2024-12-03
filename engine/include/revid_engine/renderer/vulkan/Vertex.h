@@ -2,7 +2,6 @@
 #include <vulkan/vulkan.h>
 
 #include "maths/Vec.h"
-#include "renderer/vulkan/utils/VertexUtils.h"
 
 namespace Revid
 {

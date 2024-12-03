@@ -1,8 +1,9 @@
 #include "revid_engine/platform/Application.h"
 #include "revid_engine/ServiceLocater.h"
 #include "CustomWindow.h"
-#include "renderer/vulkan/VulkanRenderer.h"
+#include "revid_engine/renderer/vulkan/VulkanRenderer.h"
 #include "logging/Logging.h"
+#include "revid_engine/renderer/Mesh.h"
 
 Revid::Application::Application()
     : Application("Revid")
@@ -16,7 +17,7 @@ Revid::Application::Application(String title)
     initializeLogger();
     intializeServices();
 
-	ServiceLocator::GetRenderer()->UpdateObj("./assets/obj/bunny.obj");
+	//ServiceLocator::GetRenderer()->UpdateObj("./assets/obj/bunny.obj");
 }
 
 Revid::Application::~Application()

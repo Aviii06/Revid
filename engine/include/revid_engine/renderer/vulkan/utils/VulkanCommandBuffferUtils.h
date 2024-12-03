@@ -1,5 +1,5 @@
 #pragma once
-#include "renderer/vulkan/VulkanRenderer.h"
+#include "revid_engine/renderer/vulkan/VulkanRenderer.h"
 
 inline void Revid::VulkanRenderer::recordCommandBuffer(const VkCommandBuffer& commandBuffer, uint32_t imageIndex)
 {
@@ -40,9 +40,9 @@ inline void Revid::VulkanRenderer::recordCommandBuffer(const VkCommandBuffer& co
     scissor.extent = m_swapChainExtent;
     vkCmdSetScissor(commandBuffer, 0, 1, &scissor);
 
-    VkBuffer vertexBuffers[] = {m_vertexBuffer};
+    Vector<VkBuffer> vertexBuffers = m_vertexBuffer->GetVulkanBuffer();
     VkDeviceSize offsets[] = {0};
-    vkCmdBindVertexBuffers(commandBuffer, 0, 1, vertexBuffers, offsets);
+    vkCmdBindVertexBuffers(commandBuffer, 0, 1, vertexBuffers.data(), offsets);
     vkCmdBindIndexBuffer(commandBuffer, m_indexBuffer, 0, VK_INDEX_TYPE_UINT16);
 
     // vkCmdDraw(commandBuffer, static_cast<uint32_t>(m_vertices.size()), 1, 0, 0);

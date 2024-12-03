@@ -7,8 +7,11 @@ set(SOURCES
         src/platform/CustomWindow.cpp
         src/Engine.cpp
         src/platform/Application.cpp
-        src/renderer/vulkan/VulkanRenderer.cpp
-        include/revid_engine/platform/Camera.cpp)
+        include/revid_engine/renderer/vulkan/VulkanRenderer.cpp
+        include/revid_engine/platform/Camera.cpp
+        include/revid_engine/renderer/vulkan/VertexBuffer.cpp
+        include/revid_engine/renderer/Mesh.cpp
+        include/revid_engine/renderer/vulkan/Buffer.cpp)
 add_library(${PROJECT_NAME} ${SOURCES})
 
 target_include_directories(${PROJECT_NAME}

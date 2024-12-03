@@ -1,8 +1,20 @@
-#pragma once
+#include "Buffer.h"
+
+#include <revid_engine/ServiceLocater.h>
+
+#include "exceptions/RevidRuntimeException.h"
 
 
-void Revid::VulkanRenderer::createBuffer(VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties,
-                                         VkBuffer& buffer, VkDeviceMemory& bufferMemory)
+Revid::Buffer::Buffer()
+{
+	m_device = ServiceLocator::GetRenderer()->GetDevice();
+	m_commandPool = ServiceLocator::GetRenderer()->GetCommandPool();
+	m_physicalDevice = ServiceLocator::GetRenderer()->GetPhysicalDevice();
+	m_graphicsQueue = ServiceLocator::GetRenderer()->GetGraphicsQueue();
+}
+
+void Revid::Buffer::CreateBuffer(VkDeviceSize size, VkBufferUsageFlags usage,
+	VkMemoryPropertyFlags properties, VkBuffer& buffer, VkDeviceMemory& bufferMemory)
 {
 	VkBufferCreateInfo bufferInfo{};
 	bufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
@@ -31,23 +43,8 @@ void Revid::VulkanRenderer::createBuffer(VkDeviceSize size, VkBufferUsageFlags u
 	vkBindBufferMemory(m_device, buffer, bufferMemory, 0);
 }
 
-uint32_t Revid::VulkanRenderer::findMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties)
+void Revid::Buffer::CopyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size)
 {
-	VkPhysicalDeviceMemoryProperties memProperties;
-	vkGetPhysicalDeviceMemoryProperties(m_physicalDevice, &memProperties);
-
-	for (uint32_t i = 0; i < memProperties.memoryTypeCount; i++)
-	{
-		if ((typeFilter & (1 << i)) && (memProperties.memoryTypes[i].propertyFlags & properties) == properties)
-		{
-			return i;
-		}
-	}
-
-	throw RevidRuntimeException("failed to find suitable memory type!");
-}
-
-void Revid::VulkanRenderer::copyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size) {
 	VkCommandBufferAllocateInfo allocInfo{};
 	allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
 	allocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
@@ -78,4 +75,20 @@ void Revid::VulkanRenderer::copyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, V
 	vkQueueWaitIdle(m_graphicsQueue);
 
 	vkFreeCommandBuffers(m_device, m_commandPool, 1, &commandBuffer);
+}
+
+uint32_t Revid::Buffer::findMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties)
+{
+	VkPhysicalDeviceMemoryProperties memProperties;
+	vkGetPhysicalDeviceMemoryProperties(m_physicalDevice, &memProperties);
+
+	for (uint32_t i = 0; i < memProperties.memoryTypeCount; i++)
+	{
+		if ((typeFilter & (1 << i)) && (memProperties.memoryTypes[i].propertyFlags & properties) == properties)
+		{
+			return i;
+		}
+	}
+
+	throw RevidRuntimeException("failed to find suitable memory type!");
 }

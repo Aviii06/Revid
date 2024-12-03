@@ -1,6 +1,6 @@
 #pragma once
 
-#include "renderer/vulkan/VulkanRenderer.h"
+#include "revid_engine/renderer/vulkan/VulkanRenderer.h"
 
 bool Revid::VulkanRenderer::isDeviceSuitable(VkPhysicalDevice device)
 {
@@ -20,7 +20,8 @@ bool Revid::VulkanRenderer::checkDeviceExtensionSupport(VkPhysicalDevice device)
 
     std::set<std::string> requiredExtensions(m_deviceExtensions.begin(), m_deviceExtensions.end());
 
-    for (const auto& extension : availableExtensions) {
+    for (const auto& extension : availableExtensions)
+    {
         requiredExtensions.erase(extension.extensionName);
     }
 

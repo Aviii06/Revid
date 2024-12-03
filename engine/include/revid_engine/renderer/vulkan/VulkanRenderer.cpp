@@ -14,9 +14,14 @@
 #include "logging/Logging.h"
 #include "utils/FileHandler.h"
 
-#include "renderer/vulkan/Vertex.h"
+#include "revid_engine/renderer/vulkan/Vertex.h"
 #include <glm/ext/matrix_transform.hpp>
 #include <glm/ext/matrix_clip_space.hpp>
+
+Revid::VulkanRenderer::VulkanRenderer()
+{
+}
+
 
 void Revid::VulkanRenderer::Init(const RendererSettings& rendererSettings)
 {
@@ -27,7 +32,7 @@ void Revid::VulkanRenderer::Init(const RendererSettings& rendererSettings)
 	m_renderFinishedSemaphores.resize(m_rendererSettings.MAX_FRAMES_IN_FLIGHT);
 	m_inFlightFences.resize(m_rendererSettings.MAX_FRAMES_IN_FLIGHT);
 
-	UpdateObj("hell");
+	//UpdateObj("hell");
 
     createInstance();
     setupDebugMessenger();
@@ -43,14 +48,12 @@ void Revid::VulkanRenderer::Init(const RendererSettings& rendererSettings)
 	createFramebuffers();
 
 	createCommandPool();
-	createVertexBuffer();
 	createIndexBuffer();
 	createUniformBuffers();
 	createDescriptorPool();
 	createDescriptorSets();
 	createCommandBuffer();
 	createSyncObjects();
-
 }
 
 void Revid::VulkanRenderer::Render()
@@ -60,12 +63,13 @@ void Revid::VulkanRenderer::Render()
 	uint32_t imageIndex;
 	VkResult res = vkAcquireNextImageKHR(m_device, m_swapChain, std::numeric_limits<uint64_t>::max() - 1, m_imageAvailableSemaphores[m_currentFrame], VK_NULL_HANDLE, &imageIndex);
 
-	if (res== VK_ERROR_OUT_OF_DATE_KHR ||  res == VK_SUBOPTIMAL_KHR || m_framebufferResized)
+	if (res== VK_ERROR_OUT_OF_DATE_KHR || m_framebufferResized)
 	{
 		m_framebufferResized = false;
 		recreateSwapChain();
+		return;
 	}
-	else if (res != VK_SUCCESS)
+	if (res != VK_SUCCESS && res != VK_TIMEOUT && res!= VK_SUBOPTIMAL_KHR)
 	{
 		throw RevidRuntimeException("failed to acquire swap chain image!");
 	}
@@ -111,123 +115,21 @@ void Revid::VulkanRenderer::Render()
 	presentInfo.pImageIndices = &imageIndex;
 	res = vkQueuePresentKHR(m_presentQueue, &presentInfo);
 
-
-	if (res == VK_ERROR_OUT_OF_DATE_KHR || res == VK_SUBOPTIMAL_KHR) {
+	if (res == VK_ERROR_OUT_OF_DATE_KHR || res == VK_SUBOPTIMAL_KHR)
+	{
 		recreateSwapChain();
-	} else if (res != VK_SUCCESS) {
+	}
+	else if (res != VK_SUCCESS)
+	{
 		throw std::runtime_error("failed to present swap chain image!");
 	}
 
 	m_currentFrame = (m_currentFrame + 1) % m_rendererSettings.MAX_FRAMES_IN_FLIGHT;
 }
 
-void Revid::VulkanRenderer::UpdateVertices(Vector<SimpleVertex> vertices)
-{
-	m_vertices = vertices;
-}
-
 void Revid::VulkanRenderer::UpdateIndices(Vector<uint16_t> indices)
 {
 	m_indices = indices;
-}
-
-void Revid::VulkanRenderer::UpdateObj(String file_name)
-{
-		// Vertex portions
-		Vector<Maths::Vec3> vertex_positions;
-		Vector<Maths::Vec2> vertex_texcoords;
-		Vector<Maths::Vec3> vertex_normals;
-
-		// Face vectors
-		std::vector<uint32_t> vertex_position_indicies;
-		std::vector<uint32_t> vertex_texcoord_indicies;
-		std::vector<uint32_t> vertex_normal_indicies;
-
-		std::stringstream ss;
-		std::ifstream in_file("./assets/obj/bunny.obj");
-		std::string line = "";
-		std::string prefix = "";
-		Maths::Vec3 temp_vec3;
-		Maths::Vec2 temp_vec2;
-		uint32_t temp_glint = 0;
-
-		// File open error check
-		if (!in_file.is_open())
-		{
-			throw "ERROR::OBJLOADER::Could not open file.";
-		}
-
-		// Read one line at a time
-		while (std::getline(in_file, line))
-		{
-			// Get the prefix of the line
-			ss.clear();
-			ss.str(line);
-			ss >> prefix;
-
-			// Vertex position
-			if (prefix == "v")
-			{
-				ss >> temp_vec3.x >> temp_vec3.y >> temp_vec3.z;
-				vertex_positions.push_back(temp_vec3);
-			}
-			// Vertex texture
-			else if (prefix == "vt")
-			{
-				ss >> temp_vec2.x >> temp_vec2.y;
-				vertex_texcoords.push_back(temp_vec2);
-			}
-			// Vertex normal
-			else if (prefix == "vn")
-			{
-				ss >> temp_vec3.x >> temp_vec3.y >> temp_vec3.z;
-				vertex_normals.push_back(temp_vec3);
-			}
-			// Face
-			else if (prefix == "f")
-			{
-				int counter = 0;
-				while (ss >> temp_glint)
-				{
-					// Pushing indices into correct arrays
-					if (counter == 0)
-						vertex_position_indicies.push_back(temp_glint);
-					else if (counter == 1)
-						vertex_texcoord_indicies.push_back(temp_glint);
-					else if (counter == 2)
-						vertex_normal_indicies.push_back(temp_glint);
-
-					// Handling characters
-					if (ss.peek() == '/')
-					{
-						++counter;
-						ss.ignore(1, '/');
-					}
-					else if (ss.peek() == ' ')
-					{
-						counter = 0;
-						ss.ignore(1, ' ');
-					}
-
-					// Reset the counter
-					if (counter > 2)
-					{
-						counter = 0;
-					}
-				}
-			}
-		}
-
-	m_vertices.resize(vertex_position_indicies.size(), SimpleVertex());
-	m_indices.resize(vertex_position_indicies.size(), uint32_t(0));
-
-	int size = m_vertices.size();
-	for (size_t i = 0; i < size; i++)
-	{
-		m_vertices[i].m_position = vertex_positions[vertex_position_indicies[i] - 1];
-		m_vertices[i].m_color = Maths::Vec3(1.0, 0.0, 0.0f);
-		m_indices[i] = i;
-	}
 }
 
 
@@ -241,8 +143,6 @@ void Revid::VulkanRenderer::Shutdown()
 	}
 
 	vkDestroyDescriptorSetLayout(m_device, m_descriptorSetLayout, nullptr);
-
-	vkDestroyBuffer(m_device, m_vertexBuffer, nullptr);
 
 	for (int i = 0; i < m_rendererSettings.MAX_FRAMES_IN_FLIGHT; i++)
 	{
@@ -270,6 +170,12 @@ void Revid::VulkanRenderer::Shutdown()
     vkDestroySurfaceKHR(m_instance, m_surface, nullptr);
     vkDestroyInstance(m_instance, nullptr);
 }
+
+void Revid::VulkanRenderer::BindVertexBuffer(Ref<VertexBuffer> vb)
+{
+	m_vertexBuffer = vb;
+}
+
 
 void Revid::VulkanRenderer::createInstance()
 {
@@ -767,26 +673,6 @@ void Revid::VulkanRenderer::createSyncObjects()
 	}
 }
 
-void Revid::VulkanRenderer::createVertexBuffer()
-{
-	VkDeviceSize bufferSize = sizeof(m_vertices[0]) * m_vertices.size();
-
-	VkBuffer stagingBuffer;
-	VkDeviceMemory stagingBufferMemory;
-	createBuffer(bufferSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, stagingBuffer, stagingBufferMemory);
-
-	void* data;
-	vkMapMemory(m_device, stagingBufferMemory, 0, bufferSize, 0, &data);
-	memcpy(data, m_vertices.data(), (size_t) bufferSize);
-	vkUnmapMemory(m_device, stagingBufferMemory);
-
-	createBuffer(bufferSize, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, m_vertexBuffer, m_vertexBufferMemory);
-
-	copyBuffer(stagingBuffer, m_vertexBuffer, bufferSize);
-
-	vkDestroyBuffer(m_device, stagingBuffer, nullptr);
-	vkFreeMemory(m_device, stagingBufferMemory, nullptr);
-}
 
 void Revid::VulkanRenderer::createIndexBuffer() {
 	VkDeviceSize bufferSize = sizeof(m_indices[0]) * m_indices.size();

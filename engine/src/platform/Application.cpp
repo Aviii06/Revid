@@ -12,6 +12,7 @@ Revid::Application::Application()
 Revid::Application::Application(String title)
     : m_title(std::move(title)), m_isRunning(true)
 {
+	system("pwd");
     Logger::Log(LogLevel::INFO, "Initialising Revid Application named: " + title);
     initializeLogger();
     intializeServices();

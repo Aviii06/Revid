@@ -45,10 +45,12 @@ namespace Revid
         void pickPhysicalDevice();
         void createLogicalDevices();
         void createSwapChain();
+        void createGbufferImages();
         void createImageViews();
         void createRenderPass();
         void createDescriptorSetLayout();
-        void createGraphicsPipeline();
+        void createGbufferPipeline();
+        void createLightingPipeline();
         void createFramebuffers();
         void createCommandPool();
         void createVertexBuffer();
@@ -99,7 +101,20 @@ namespace Revid
         uint32_t findMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties);
         void copyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size);
         void updateUniformBuffer(uint32_t currentImage);
-
+        void createImage(
+            VkDevice device,
+            uint32_t width,
+            uint32_t height,
+            VkFormat format,
+            VkImageUsageFlags usage,
+            VkMemoryPropertyFlags properties,
+            VkImage& image,
+            VkDeviceMemory& imageMemory);
+        VkImageView createImageView(
+            VkDevice device,
+            VkImage image,
+            VkFormat format,
+            VkImageAspectFlags aspectFlags);
 
     private:
 #ifdef NDEBUG
@@ -118,15 +133,30 @@ namespace Revid
         VkSurfaceKHR m_surface;
 		VkSwapchainKHR m_swapChain;
         std::vector<VkImage> m_swapChainImages;
+        std::vector<VkImage> m_positionImages;
+        std::vector<VkImage> m_colorImages;
+        std::vector<VkImage> m_normalImages;
         VkFormat m_swapChainImageFormat;
         VkExtent2D m_swapChainExtent;
-        VkPipelineLayout m_pipelineLayout;
         VkRenderPass m_renderPass;
+
         std::vector<VkImageView> m_swapChainImageViews;
+        std::vector<VkImageView> m_positionImageViews;
+        std::vector<VkImageView> m_colorImageViews;
+        std::vector<VkImageView> m_normalImageViews;
+
+        std::vector<VkDeviceMemory> m_positionImageMemories;
+        std::vector<VkDeviceMemory> m_colorImageMemories;
+        std::vector<VkDeviceMemory> m_normalImageMemories;
+
         std::vector<VkFramebuffer> m_swapChainFramebuffers;
         VkCommandPool m_commandPool;
         Vector<VkCommandBuffer> m_commandBuffers;
-        VkPipeline m_graphicsPipeline;
+        VkPipeline m_gbufferPipeline;
+        VkPipeline m_lightingPipeline;
+
+        VkPipelineLayout m_gbufferPipelineLayout;
+        VkPipelineLayout m_lightingPipelineLayout;
 
 
         const std::vector<const char*> m_validationLayers = {
@@ -147,7 +177,8 @@ namespace Revid
         VkBuffer m_vertexBuffer;
         size_t m_vertexCount;
         VkDeviceMemory m_vertexBufferMemory;
-        VkDescriptorSetLayout m_descriptorSetLayout;
+        VkDescriptorSetLayout m_gbufferDescriptorSetLayout;
+        VkDescriptorSetLayout m_lightingDescriptorSetLayout;
 
         VkBuffer m_indexBuffer;
         VkDeviceMemory m_indexBufferMemory;
@@ -155,8 +186,10 @@ namespace Revid
         std::vector<VkBuffer> m_uniformBuffers;
         std::vector<VkDeviceMemory> m_uniformBuffersMemory;
         std::vector<void*> m_uniformBuffersMapped;
-        VkDescriptorPool m_descriptorPool;
-        Vector<VkDescriptorSet> m_descriptorSets;
+        VkDescriptorPool m_gbufferDescriptorPool;
+        Vector<VkDescriptorSet> m_gbufferDescriptorSets;
+        VkDescriptorPool m_lightingDescriptorPool;
+        Vector<VkDescriptorSet> m_lightingDescriptorSets;
 
 
         Vector<SimpleVertex> m_vertices = {

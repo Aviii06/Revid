@@ -247,7 +247,7 @@ void Revid::VulkanRenderer::Shutdown()
 
 	vkDestroyDescriptorSetLayout(m_device, m_gbufferDescriptorSetLayout, nullptr);
 
-	vkDestroyBuffer(m_device, m_vertexBuffer, nullptr);
+	vkDestroyBuffer(m_device, m_gbufferVertexBuffer, nullptr);
 
 	for (int i = 0; i < m_rendererSettings.MAX_FRAMES_IN_FLIGHT; i++)
 	{
@@ -552,25 +552,11 @@ void Revid::VulkanRenderer::createImageViews()
 
 	for (size_t i = 0; i < m_swapChainImages.size(); i++)
 	{
-		VkImageViewCreateInfo createInfo{};
-		createInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
-		createInfo.image = m_swapChainImages[i];
-		createInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
-		createInfo.format = m_swapChainImageFormat;
-		createInfo.components.r = VK_COMPONENT_SWIZZLE_IDENTITY;
-		createInfo.components.g = VK_COMPONENT_SWIZZLE_IDENTITY;
-		createInfo.components.b = VK_COMPONENT_SWIZZLE_IDENTITY;
-		createInfo.components.a = VK_COMPONENT_SWIZZLE_IDENTITY;
-		createInfo.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-		createInfo.subresourceRange.baseMipLevel = 0;
-		createInfo.subresourceRange.levelCount = 1;
-		createInfo.subresourceRange.baseArrayLayer = 0;
-		createInfo.subresourceRange.layerCount = 1;
-
-		if (vkCreateImageView(m_device, &createInfo, nullptr, &m_swapChainImageViews[i]) != VK_SUCCESS)
-		{
-			throw RevidRuntimeException("failed to create image views!");
-		}
+		m_swapChainImageViews[i] = createImageView(
+			m_device,
+			m_swapChainImages[i],
+			m_swapChainImageFormat,
+			VK_IMAGE_ASPECT_COLOR_BIT);
 
 		m_positionImageViews[i] = createImageView(
 			m_device,
@@ -667,13 +653,13 @@ void Revid::VulkanRenderer::createRenderPass()
 	dependencies[0].dstAccessMask = VK_ACCESS_INPUT_ATTACHMENT_READ_BIT;
 	dependencies[0].dependencyFlags = VK_DEPENDENCY_BY_REGION_BIT;
 
-	// Lighting pass -> External (Swapchain presentation)
+	// Lighting pass -> External (Swapchain)
 	dependencies[1].srcSubpass = 1;
 	dependencies[1].dstSubpass = VK_SUBPASS_EXTERNAL;
 	dependencies[1].srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
-	dependencies[1].dstStageMask = VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT;
+	dependencies[1].dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
 	dependencies[1].srcAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
-	dependencies[1].dstAccessMask = 0;
+	dependencies[1].dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
 	dependencies[1].dependencyFlags = 0;
 
 
@@ -788,7 +774,8 @@ void Revid::VulkanRenderer::createGbufferPipeline()
 	multisampling.rasterizationSamples = VK_SAMPLE_COUNT_1_BIT;
 
 	VkPipelineColorBlendAttachmentState colorBlendAttachments[3];
-	for (int i = 0; i < 3; ++i) {
+	for (int i = 0; i < 3; ++i)
+	{
 		colorBlendAttachments[i].blendEnable = VK_FALSE; // No blending
 		colorBlendAttachments[i].srcColorBlendFactor = VK_BLEND_FACTOR_ONE; // Default, ignored
 		colorBlendAttachments[i].dstColorBlendFactor = VK_BLEND_FACTOR_ZERO; // Default, ignored
@@ -877,11 +864,13 @@ void Revid::VulkanRenderer::createLightingPipeline()
 
 	VkPipelineVertexInputStateCreateInfo vertexInputInfo{};
 	vertexInputInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
-	// No bindings or attributes
-	vertexInputInfo.vertexBindingDescriptionCount = 0;
-	vertexInputInfo.pVertexBindingDescriptions = nullptr;
-	vertexInputInfo.vertexAttributeDescriptionCount = 0;
-	vertexInputInfo.pVertexAttributeDescriptions = nullptr;
+	auto bindingDescription = SimpleVertex::GetBindingDescription();
+	auto attributeDescription = SimpleVertex::GetAttributeDescriptions();
+	vertexInputInfo.vertexBindingDescriptionCount = 1;
+	vertexInputInfo.vertexAttributeDescriptionCount = attributeDescription.size();
+
+	vertexInputInfo.pVertexBindingDescriptions = &bindingDescription;
+	vertexInputInfo.pVertexAttributeDescriptions = attributeDescription.data();
 
 	VkPipelineInputAssemblyStateCreateInfo inputAssembly{};
 	inputAssembly.sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
@@ -1061,9 +1050,28 @@ void Revid::VulkanRenderer::createVertexBuffer()
 	memcpy(data, m_vertices.data(), (size_t) bufferSize);
 	vkUnmapMemory(m_device, stagingBufferMemory);
 
-	createBuffer(bufferSize, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, m_vertexBuffer, m_vertexBufferMemory);
+	createBuffer(bufferSize, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, m_gbufferVertexBuffer, m_gbufferVertexBufferMemory);
 
-	copyBuffer(stagingBuffer, m_vertexBuffer, bufferSize);
+	copyBuffer(stagingBuffer, m_gbufferVertexBuffer, bufferSize);
+
+	vkDestroyBuffer(m_device, stagingBuffer, nullptr);
+	vkFreeMemory(m_device, stagingBufferMemory, nullptr);
+
+
+
+	// lighting
+
+	bufferSize = sizeof(m_vertices2[0]) *  m_vertices2.size();
+
+	createBuffer(bufferSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, stagingBuffer, stagingBufferMemory);
+
+	vkMapMemory(m_device, stagingBufferMemory, 0, bufferSize, 0, &data);
+	memcpy(data, m_vertices2.data(), (size_t) bufferSize);
+	vkUnmapMemory(m_device, stagingBufferMemory);
+
+	createBuffer(bufferSize, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, m_lightingVertexBuffer, m_lightingVertexBufferMemory);
+
+	copyBuffer(stagingBuffer, m_lightingVertexBuffer, bufferSize);
 
 	vkDestroyBuffer(m_device, stagingBuffer, nullptr);
 	vkFreeMemory(m_device, stagingBufferMemory, nullptr);
@@ -1081,9 +1089,27 @@ void Revid::VulkanRenderer::createIndexBuffer() {
 	memcpy(data, m_indices.data(), (size_t) bufferSize);
 	vkUnmapMemory(m_device, stagingBufferMemory);
 
-	createBuffer(bufferSize, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, m_indexBuffer, m_indexBufferMemory);
+	createBuffer(bufferSize, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, m_gbufferIndexBuffer, m_gbufferIndexBufferMemory);
 
-	copyBuffer(stagingBuffer, m_indexBuffer, bufferSize);
+	copyBuffer(stagingBuffer, m_gbufferIndexBuffer, bufferSize);
+
+	vkDestroyBuffer(m_device, stagingBuffer, nullptr);
+	vkFreeMemory(m_device, stagingBufferMemory, nullptr);
+
+
+	// lighting
+	bufferSize = sizeof(m_indices2[0]) * m_indices2.size();
+
+	createBuffer(bufferSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, stagingBuffer, stagingBufferMemory);
+
+	void* data2;
+	vkMapMemory(m_device, stagingBufferMemory, 0, bufferSize, 0, &data2);
+	memcpy(data2, m_indices2.data(), (size_t) bufferSize);
+	vkUnmapMemory(m_device, stagingBufferMemory);
+
+	createBuffer(bufferSize, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, m_lightingIndexBuffer, m_lightingIndexBufferMemory);
+
+	copyBuffer(stagingBuffer, m_lightingIndexBuffer, bufferSize);
 
 	vkDestroyBuffer(m_device, stagingBuffer, nullptr);
 	vkFreeMemory(m_device, stagingBufferMemory, nullptr);

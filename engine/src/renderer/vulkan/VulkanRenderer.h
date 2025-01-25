@@ -174,14 +174,18 @@ namespace Revid
         Vector<VkFence> m_inFlightFences;
 
         // Vertext Buffer
-        VkBuffer m_vertexBuffer;
+        VkBuffer m_gbufferVertexBuffer;
+        VkBuffer m_lightingVertexBuffer;
         size_t m_vertexCount;
-        VkDeviceMemory m_vertexBufferMemory;
+        VkDeviceMemory m_gbufferVertexBufferMemory;
+        VkDeviceMemory m_lightingVertexBufferMemory;
         VkDescriptorSetLayout m_gbufferDescriptorSetLayout;
         VkDescriptorSetLayout m_lightingDescriptorSetLayout;
 
-        VkBuffer m_indexBuffer;
-        VkDeviceMemory m_indexBufferMemory;
+        VkBuffer m_gbufferIndexBuffer;
+        VkBuffer m_lightingIndexBuffer;
+        VkDeviceMemory m_gbufferIndexBufferMemory;
+        VkDeviceMemory m_lightingIndexBufferMemory;
 
         std::vector<VkBuffer> m_uniformBuffers;
         std::vector<VkDeviceMemory> m_uniformBuffersMemory;
@@ -202,6 +206,13 @@ namespace Revid
           {{0.5f, -0.5f, -0.5f}, {0.0f, 1.0f, 0.0f}},
           {{0.5f, 0.5f, -0.5f}, {0.0f, 0.0f, 1.0f}},
           {{-0.5f, 0.5f, -0.5f}, {1.0f, 1.0f, 1.0f}}
+        };
+
+        Vector<SimpleVertex> m_vertices2 = {
+            {{-1.0f, -1.0f, 1.0f}, {1.0f, 0.0f, 0.0f}},
+          {{1.0f, -1.0f, 1.0f}, {0.0f, 1.0f, 0.0f}},
+          {{1.0f, 1.0f, 1.0f}, {0.0f, 0.0f, 1.0f}},
+          {{-1.0f, 1.0f, 1.0f}, {0.0f, 0.0f, 1.0f}},
         };
 
         Vector<uint16_t> m_indices = {
@@ -230,5 +241,11 @@ namespace Revid
             4, 0, 7
 
         };
+
+        Vector<uint16_t> m_indices2 = {
+            // UP
+            0, 2, 1,
+            2, 0, 3
+		};
     };
 }

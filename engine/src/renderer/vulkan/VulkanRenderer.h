@@ -2,8 +2,12 @@
 #define GLFW_INCLUDE_VULKAN
 #include <revid_engine/renderer/Renderer.h>
 #include <vulkan/vulkan.h>
+
+#include "Mesh.h"
 #include "Vertex.h"
 #include "types/SmartPointers.h"
+
+#define MAX_MESHES_ALLOWED 1000
 
 struct UniformBufferObject {
     glm::mat4 model;
@@ -37,6 +41,7 @@ namespace Revid
         void UpdateVertices(Vector<SimpleVertex>) override;
         void UpdateIndices(Vector<uint16_t>) override;
         void UpdateObj(String path) override;
+        void AddMeshToScene(Ref<Mesh> mesh);
 
     private:
         void createInstance();
@@ -97,9 +102,12 @@ namespace Revid
         VkShaderModule createShaderModule(const std::vector<char>& code);
         void recordCommandBuffer(const VkCommandBuffer& commandBuffer, uint32_t imageIndex);
 
+    public:
         void createBuffer(VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties, VkBuffer& buffer, VkDeviceMemory& bufferMemory);
         uint32_t findMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties);
         void copyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size);
+
+    private:
         void updateUniformBuffer(uint32_t currentImage);
         void createImage(
             VkDevice device,
@@ -247,5 +255,7 @@ namespace Revid
             0, 2, 1,
             2, 0, 3
 		};
+
+        Vector<Ref<Mesh>> m_meshes;
     };
 }

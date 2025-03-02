@@ -27,7 +27,9 @@ void Revid::VulkanRenderer::Init(const RendererSettings& rendererSettings)
 	m_renderFinishedSemaphores.resize(m_rendererSettings.MAX_FRAMES_IN_FLIGHT);
 	m_inFlightFences.resize(m_rendererSettings.MAX_FRAMES_IN_FLIGHT);
 
-	UpdateObj("hell");
+	m_meshes.reserve(MAX_MESHES_ALLOWED);
+
+	// UpdateObj("hell");
 
     createInstance();
     setupDebugMessenger();
@@ -148,7 +150,7 @@ void Revid::VulkanRenderer::UpdateObj(String file_name)
 		std::vector<uint32_t> vertex_normal_indicies;
 
 		std::stringstream ss;
-		std::ifstream in_file("./assets/obj/bunny.obj");
+		std::ifstream in_file("./assets/obj/grass.obj");
 		std::string line = "";
 		std::string prefix = "";
 		Maths::Vec3 temp_vec3;
@@ -230,7 +232,7 @@ void Revid::VulkanRenderer::UpdateObj(String file_name)
 	for (size_t i = 0; i < size; i++)
 	{
 		m_vertices[i].m_position = vertex_positions[vertex_position_indicies[i] - 1];
-		m_vertices[i].m_color = Maths::Vec3(1.0, 0.0, 0.0f);
+		m_vertices[i].m_color = Maths::Vec3(0.0, 1.0, 0.0f);
 		m_indices[i] = i;
 	}
 }
@@ -764,7 +766,7 @@ void Revid::VulkanRenderer::createGbufferPipeline()
 	rasterizer.rasterizerDiscardEnable = VK_FALSE;
 	rasterizer.polygonMode = VK_POLYGON_MODE_FILL;
 	rasterizer.lineWidth = 1.0f;
-	rasterizer.cullMode = VK_CULL_MODE_BACK_BIT;
+	rasterizer.cullMode = VK_CULL_MODE_NONE;
 	rasterizer.frontFace = VK_FRONT_FACE_COUNTER_CLOCKWISE;
 	rasterizer.depthBiasEnable = VK_FALSE;
 

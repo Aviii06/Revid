@@ -4,6 +4,7 @@
 #include "revid_engine/renderer/Renderer.h"
 #include "revid_engine/platform/Camera.h"
 #include <logging/Logging.h>
+#include <renderer/vulkan/VulkanRenderer.h>
 
 //TODO: Use a singelton mixin to remove duplication
 namespace Revid
@@ -12,7 +13,7 @@ namespace Revid
     {
     private:
         static inline Ptr<Window> s_window = nullptr;
-        static inline Ptr<Renderer> s_renderer = nullptr;
+        static inline Ptr<VulkanRenderer> s_renderer = nullptr;
         static inline Ptr<EditorCamera> s_camera = nullptr;
 
         static inline void shutdownWindow()
@@ -38,12 +39,12 @@ namespace Revid
             s_window = std::unique_ptr<Window>(window);
         }
 
-        static inline void Provide(Renderer *renderer, RendererSettings settings)
+        static inline void Provide(VulkanRenderer *renderer, RendererSettings settings)
         {
             Logger::Log(LogLevel::INFO, "Creating Renderer");
             if (s_renderer != nullptr) return;
 
-            s_renderer = std::unique_ptr<Renderer>(renderer);
+            s_renderer = std::unique_ptr<VulkanRenderer>(renderer);
             s_renderer->Init(settings);
         }
 
@@ -56,7 +57,7 @@ namespace Revid
         }
 
         static inline const Ptr<Window>& GetWindow() { return s_window; }
-        static inline const Ptr<Renderer>& GetRenderer() { return s_renderer; }
+        static inline const Ptr<VulkanRenderer>& GetRenderer() { return s_renderer; }
         static inline const Ptr<EditorCamera>& GetCamera() { return s_camera; }
 
         static inline void ShutdownServices()

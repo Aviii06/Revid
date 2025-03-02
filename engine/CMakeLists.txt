@@ -8,7 +8,8 @@ set(SOURCES
         src/Engine.cpp
         src/platform/Application.cpp
         src/renderer/vulkan/VulkanRenderer.cpp
-        include/revid_engine/platform/Camera.cpp)
+        include/revid_engine/platform/Camera.cpp
+        src/renderer/vulkan/Mesh.cpp)
 add_library(${PROJECT_NAME} ${SOURCES})
 
 target_include_directories(${PROJECT_NAME}

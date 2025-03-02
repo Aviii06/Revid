@@ -79,6 +79,8 @@ void Revid::Application::intializeServices()
     };
 
     ServiceLocator::Provide(new VulkanRenderer(), settings);
+	Ref<Mesh> mesh = MakeRef<Mesh>("./assets/obj/bunny.obj");
+	ServiceLocator::GetRenderer()->AddMeshToScene(std::move(mesh));
 }
 
 void Revid::Application::initializeLogger()

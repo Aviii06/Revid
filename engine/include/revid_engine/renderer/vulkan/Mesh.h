@@ -10,10 +10,14 @@ namespace Revid
 	{
 	public:
 		Mesh(String file_name);
-		~Mesh();
+		~Mesh() = default;
 		VkBuffer GetVertexBuffer() { return m_vertexBuffer; }
 		VkBuffer GetIndexBuffer() { return m_indexBuffer; }
+		Vector<SimpleVertex> GetVertices() const { return m_vertices; }
+		Vector<uint16_t> GetIndices() const { return m_indices; }
+		int GetIndicesSize() { return m_indices.size(); }
 		int GetInstanceCount() { return m_instanceCount; }
+		void SetInstanceCount(int instanceCount) { m_instanceCount = instanceCount; }
 
 	private:
 		void createVertexBuffer();

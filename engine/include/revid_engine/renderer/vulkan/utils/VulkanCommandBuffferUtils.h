@@ -1,5 +1,5 @@
 #pragma once
-#include "renderer/vulkan/VulkanRenderer.h"
+#include "revid_engine/renderer/vulkan/VulkanRenderer.h"
 
 inline void Revid::VulkanRenderer::recordCommandBuffer(const VkCommandBuffer& commandBuffer, uint32_t imageIndex)
 {
@@ -47,16 +47,13 @@ inline void Revid::VulkanRenderer::recordCommandBuffer(const VkCommandBuffer& co
     vkCmdSetScissor(commandBuffer, 0, 1, &scissor);
 
     Vector<VkBuffer> vertexBuffers;
-    Vector<VkBuffer> indexBuffers; // Example index buffers
     Vector<VkDeviceSize> indexOffsets; // Offsets for each index buffer (if different offsets are required)
     vertexBuffers.reserve(MAX_MESHES_ALLOWED);
-    indexBuffers.reserve(MAX_MESHES_ALLOWED);
     indexOffsets.reserve(MAX_MESHES_ALLOWED);
 
     for (auto mesh : m_meshes)
     {
         vertexBuffers.push_back(mesh->GetVertexBuffer());
-        indexBuffers.push_back(mesh->GetIndexBuffer());
         indexOffsets.push_back(0);
     }
 
@@ -64,8 +61,10 @@ inline void Revid::VulkanRenderer::recordCommandBuffer(const VkCommandBuffer& co
     vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_gbufferPipelineLayout, 0, 1, &m_gbufferDescriptorSets[m_currentFrame], 0, nullptr);
     for (size_t i = 0; i < m_meshes.size(); i++)
 	{
-		vkCmdBindIndexBuffer(commandBuffer, indexBuffers[i], indexOffsets[i], VK_INDEX_TYPE_UINT16);
-		vkCmdDrawIndexed(commandBuffer, static_cast<uint32_t>(m_indices.size()), m_meshes[i]->GetInstanceCount(), 0, 0, 0);
+        VkBuffer indexBuffer = m_meshes[i]->GetIndexBuffer();
+        int indexCount = m_meshes[i]->GetIndicesSize();
+		vkCmdBindIndexBuffer(commandBuffer, indexBuffer, indexOffsets[i], VK_INDEX_TYPE_UINT16);
+		vkCmdDrawIndexed(commandBuffer, static_cast<uint32_t>(indexCount), m_meshes[i]->GetInstanceCount(), 0, 0, 0);
 	}
 
     // vkCmdDraw(commandBuffer, static_cast<uint32_t>(m_vertices.size()), 1, 0, 0);

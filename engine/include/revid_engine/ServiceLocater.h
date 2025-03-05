@@ -4,7 +4,7 @@
 #include "revid_engine/renderer/Renderer.h"
 #include "revid_engine/platform/Camera.h"
 #include <logging/Logging.h>
-#include <renderer/vulkan/VulkanRenderer.h>
+#include "revid_engine/renderer/vulkan/VulkanRenderer.h"
 
 //TODO: Use a singelton mixin to remove duplication
 namespace Revid

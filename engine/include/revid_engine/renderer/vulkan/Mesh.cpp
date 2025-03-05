@@ -22,7 +22,6 @@ Revid::Mesh::Mesh(String file_name)
 	Maths::Vec3 temp_vec3;
 	Maths::Vec2 temp_vec2;
 	uint32_t temp_glint = 0;
-	system("pwd");
 
 	// File open error check
 	if (!in_file.is_open())
@@ -102,9 +101,9 @@ Revid::Mesh::Mesh(String file_name)
 		m_indices[i] = i;
 	}
 
+	m_device = ServiceLocator::GetRenderer()->GetDeivce();
 	createVertexBuffer();
 	createIndexBuffer();
-	m_instanceCount = 1000;
 }
 
 
@@ -131,7 +130,7 @@ void Revid::Mesh::createVertexBuffer()
 
 void Revid::Mesh::createIndexBuffer()
 {
-	VkDeviceSize bufferSize = sizeof(m_indices[0]) * m_indices.size();
+	VkDeviceSize bufferSize = sizeof(m_indices[0]) * m_indices.size() + 1;
 
 	VkBuffer stagingBuffer;
 	VkDeviceMemory stagingBufferMemory;

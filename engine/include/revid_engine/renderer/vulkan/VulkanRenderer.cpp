@@ -14,7 +14,7 @@
 #include "logging/Logging.h"
 #include "utils/FileHandler.h"
 
-#include "renderer/vulkan/Vertex.h"
+#include "revid_engine/renderer/vulkan/Vertex.h"
 #include <glm/ext/matrix_transform.hpp>
 #include <glm/ext/matrix_clip_space.hpp>
 
@@ -136,6 +136,12 @@ void Revid::VulkanRenderer::UpdateIndices(Vector<uint16_t> indices)
 {
 	m_indices = indices;
 }
+
+void Revid::VulkanRenderer::AddMeshToScene(Ref<Mesh> mesh)
+{
+	m_meshes.push_back(std::move(mesh));
+}
+
 
 void Revid::VulkanRenderer::UpdateObj(String file_name)
 {
@@ -1079,7 +1085,8 @@ void Revid::VulkanRenderer::createVertexBuffer()
 	vkFreeMemory(m_device, stagingBufferMemory, nullptr);
 }
 
-void Revid::VulkanRenderer::createIndexBuffer() {
+void Revid::VulkanRenderer::createIndexBuffer()
+{
 	VkDeviceSize bufferSize = sizeof(m_indices[0]) * m_indices.size();
 
 	VkBuffer stagingBuffer;

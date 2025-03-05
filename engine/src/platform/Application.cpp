@@ -1,7 +1,7 @@
 #include "revid_engine/platform/Application.h"
 #include "revid_engine/ServiceLocater.h"
 #include "CustomWindow.h"
-#include "renderer/vulkan/VulkanRenderer.h"
+#include "revid_engine/renderer/vulkan/VulkanRenderer.h"
 #include "logging/Logging.h"
 
 Revid::Application::Application()
@@ -17,7 +17,7 @@ Revid::Application::Application(String title)
     initializeLogger();
     intializeServices();
 
-	ServiceLocator::GetRenderer()->UpdateObj("./assets/obj/bunny.obj");
+	//ServiceLocator::GetRenderer()->UpdateObj("./assets/obj/bunny.obj");
 }
 
 Revid::Application::~Application()
@@ -79,8 +79,12 @@ void Revid::Application::intializeServices()
     };
 
     ServiceLocator::Provide(new VulkanRenderer(), settings);
-	Ref<Mesh> mesh = MakeRef<Mesh>("./assets/obj/bunny.obj");
-	ServiceLocator::GetRenderer()->AddMeshToScene(std::move(mesh));
+    system("pwd");
+	Ref<Mesh> mesh = MakeRef<Mesh>("./assets/obj/grass.obj");
+	mesh->SetInstanceCount(10000);
+	ServiceLocator::GetRenderer()->AddMeshToScene(mesh);
+	Ref<Mesh> planeMesh = MakeRef<Mesh>("./assets/obj/plane.obj");
+	ServiceLocator::GetRenderer()->AddMeshToScene(planeMesh);
 }
 
 void Revid::Application::initializeLogger()

@@ -42,6 +42,7 @@ namespace Revid
         void UpdateIndices(Vector<uint16_t>) override;
         void UpdateObj(String path) override;
         void AddMeshToScene(Ref<Mesh> mesh);
+        VkDevice GetDeivce() const { return m_device; }
 
     private:
         void createInstance();
@@ -185,15 +186,15 @@ namespace Revid
         VkBuffer m_gbufferVertexBuffer;
         VkBuffer m_lightingVertexBuffer;
         size_t m_vertexCount;
-        VkDeviceMemory m_gbufferVertexBufferMemory;
-        VkDeviceMemory m_lightingVertexBufferMemory;
+        VkDeviceMemory m_gbufferVertexBufferMemory = VK_NULL_HANDLE;
+        VkDeviceMemory m_lightingVertexBufferMemory = VK_NULL_HANDLE;
         VkDescriptorSetLayout m_gbufferDescriptorSetLayout;
         VkDescriptorSetLayout m_lightingDescriptorSetLayout;
 
         VkBuffer m_gbufferIndexBuffer;
         VkBuffer m_lightingIndexBuffer;
-        VkDeviceMemory m_gbufferIndexBufferMemory;
-        VkDeviceMemory m_lightingIndexBufferMemory;
+        VkDeviceMemory m_gbufferIndexBufferMemory = VK_NULL_HANDLE;
+        VkDeviceMemory m_lightingIndexBufferMemory = VK_NULL_HANDLE;
 
         std::vector<VkBuffer> m_uniformBuffers;
         std::vector<VkDeviceMemory> m_uniformBuffersMemory;
@@ -205,15 +206,10 @@ namespace Revid
 
 
         Vector<SimpleVertex> m_vertices = {
-            {{-0.5f, -0.5f, 0.5f}, {1.0f, 0.0f, 0.0f}},
-          {{0.5f, -0.5f, 0.5f}, {0.0f, 1.0f, 0.0f}},
-          {{0.5f, 0.5f, 0.5f}, {0.0f, 0.0f, 1.0f}},
-          {{-0.5f, 0.5f, 0.5f}, {1.0f, 1.0f, 1.0f}},
-
-            {{-0.5f, -0.5f, -0.5f}, {1.0f, 0.0f, 0.0f}},
-          {{0.5f, -0.5f, -0.5f}, {0.0f, 1.0f, 0.0f}},
-          {{0.5f, 0.5f, -0.5f}, {0.0f, 0.0f, 1.0f}},
-          {{-0.5f, 0.5f, -0.5f}, {1.0f, 1.0f, 1.0f}}
+            {{-1.0f, -1.0f, 1.0f}, {1.0f, 0.0f, 0.0f}},
+            {{1.0f, -1.0f, 1.0f}, {0.0f, 1.0f, 0.0f}},
+            {{1.0f, 1.0f, 1.0f}, {0.0f, 0.0f, 1.0f}},
+            {{-1.0f, 1.0f, 1.0f}, {0.0f, 0.0f, 1.0f}},
         };
 
         Vector<SimpleVertex> m_vertices2 = {

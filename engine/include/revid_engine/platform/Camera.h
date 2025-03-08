@@ -59,6 +59,8 @@ namespace Revid
         void MoveBackward();
         void MoveLeft();
         void MoveRight();
+        void MoveUp();
+        void MoveDown();
         void ProcessMouseScroll(float scrollOffset);
         void ProcessMouseMovement(float xOffset, float yOffset, bool constrainPitch);
     };

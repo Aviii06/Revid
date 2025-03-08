@@ -16,7 +16,7 @@ void main()
 {
     int x = gl_InstanceIndex % 100;
     int y = (gl_InstanceIndex/100) % 100;
-    v_worldPos = (ubo.model *  vec4(inPosition, 1.0) + 0.25 * vec4(x, y, 0.0f, 0.0)).rgb;
-    gl_Position = ubo.proj * ubo.view * (ubo.model *  vec4(inPosition, 1.0) + 0.25 * vec4(x, y, 0.0f, 0.0));
+    v_worldPos = (ubo.model *  vec4(inPosition, 1.0) + vec4(x, y, 0.0f, 0.0)).rgb;
+    gl_Position = ubo.proj * ubo.view * (vec4(v_worldPos, 1.0f));
     fragColor = inColor;
 }

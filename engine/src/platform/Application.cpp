@@ -1,6 +1,8 @@
 #include "revid_engine/platform/Application.h"
 #include "revid_engine/ServiceLocater.h"
 #include "CustomWindow.h"
+#define GLM_ENABLE_EXPERIMENTAL
+#include "glm/gtx/transform.hpp"
 #include "revid_engine/renderer/vulkan/VulkanRenderer.h"
 #include "logging/Logging.h"
 
@@ -54,13 +56,21 @@ void Revid::Application::Run()
     	{
     		ServiceLocator::GetCamera()->MoveRight();
     	}
-
-    	// Process Mouse Movements
-    	if (ServiceLocator::GetWindow()->IsKeyPressed(341))
+    	if (ServiceLocator::GetWindow()->IsKeyPressed('L'))
     	{
-    		xoffset = ServiceLocator::GetWindow()->GetMouseX() - lastX;
-			ServiceLocator::GetCamera()->ProcessMouseMovement();
+    		ServiceLocator::GetCamera()->MoveUp();
     	}
+    	if (ServiceLocator::GetWindow()->IsKeyPressed('H'))
+    	{
+    		ServiceLocator::GetCamera()->MoveDown();
+    	}
+
+   //  	// Process Mouse Movements
+   //  	if (ServiceLocator::GetWindow()->IsKeyPressed(341))
+   //  	{
+   //  		xoffset = ServiceLocator::GetWindow()->GetMouseX() - lastX;
+			// ServiceLocator::GetCamera()->ProcessMouseMovement();
+   //  	}
 
         ServiceLocator::GetRenderer()->Render();
     }
@@ -79,10 +89,10 @@ void Revid::Application::intializeServices()
 	ServiceLocator::Provide(new EditorCamera());
 
     RendererSettings settings {
-    	.MAX_FRAMES_IN_FLIGHT = 3,
-        .appName =  m_title,
-        .windowExtentions = ServiceLocator::GetWindow()->GetExtentions(),
-        .windowExtentionCount = ServiceLocator::GetWindow()->GetExtentionCount()
+    	3,
+          m_title,
+        ServiceLocator::GetWindow()->GetExtentions(),
+        ServiceLocator::GetWindow()->GetExtentionCount()
     };
 
     ServiceLocator::Provide(new VulkanRenderer(), settings);
@@ -92,7 +102,7 @@ void Revid::Application::intializeServices()
 	ServiceLocator::GetRenderer()->AddMeshToScene(mesh);
 	Ref<Mesh> planeMesh = MakeRef<Mesh>("./assets/obj/plane.obj");
 	// The model matrix which is pretty big.
-	glm::mat4 modelMatrix = glm::mat4(10.0f);
+	glm::mat4 modelMatrix = glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, -10.0f, 0.0f)) * glm::mat4(10.0f);
 	planeMesh->SetModelMatrix(modelMatrix);
 	planeMesh->SetInstanceCount(100);
 	ServiceLocator::GetRenderer()->AddMeshToScene(planeMesh);

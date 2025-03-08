@@ -94,12 +94,14 @@ Revid::Mesh::Mesh(String file_name)
 	m_indices.resize(vertex_position_indicies.size(), uint32_t(0));
 
 	int size = m_vertices.size();
+	static int j = 0;
 	for (size_t i = 0; i < size; i++)
 	{
 		m_vertices[i].m_position = vertex_positions[vertex_position_indicies[i] - 1];
-		m_vertices[i].m_color = Maths::Vec3(0.0, 1.0, 0.0f);
+		m_vertices[i].m_color = Maths::Vec3(j, (j+1)/2.0, (j+2)/3.0);
 		m_indices[i] = i;
 	}
+	j++;
 
 	m_modelMatrix = glm::mat4(1.0f);
 	m_device = ServiceLocator::GetRenderer()->GetDeivce();

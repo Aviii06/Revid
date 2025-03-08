@@ -22,8 +22,8 @@ namespace Revid
         void GetDrawSurface(Map<SurfaceArgs, int*>) override;
         void WaitForEvents() override;
         bool IsKeyPressed(int key) override;
-        float GetMouseX() override;
-        float GetMouseY() override;
+        // float GetMouseX() override;
+        // float GetMouseY() override;
     };
 }
 

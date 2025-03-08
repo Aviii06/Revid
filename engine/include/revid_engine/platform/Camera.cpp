@@ -124,4 +124,16 @@ namespace Revid
 		m_Position += m_Right * m_MovementSpeed;
 		updateViewMatrix();
 	}
+
+	void EditorCamera::MoveUp()
+	{
+		m_Position += m_Up * m_MovementSpeed;
+		updateViewMatrix();
+	}
+
+	void EditorCamera::MoveDown()
+	{
+		m_Position -= m_Up * m_MovementSpeed;
+		updateViewMatrix();
+	}
 }

@@ -3,6 +3,7 @@
 
 #include "maths/Vec.h"
 #include "revid_engine/renderer/vulkan/utils/VertexUtils.h"
+#include <array>
 
 namespace Revid
 {

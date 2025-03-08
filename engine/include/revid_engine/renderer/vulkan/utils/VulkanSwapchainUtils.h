@@ -1,6 +1,7 @@
 #pragma once
 #include "revid_engine/renderer/vulkan/VulkanRenderer.h"
 #include <revid_engine/ServiceLocater.h>
+#include <algorithm>
 
 Revid::SwapChainSupportDetails Revid::VulkanRenderer::querySwapChainSupport(VkPhysicalDevice device)
 {

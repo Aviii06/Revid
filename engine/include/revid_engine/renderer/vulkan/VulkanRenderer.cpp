@@ -329,7 +329,9 @@ void Revid::VulkanRenderer::createInstance()
         requiredExtensions.push_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
     }
 
+#if defined(__APPLE__)
     requiredExtensions.emplace_back(VK_KHR_PORTABILITY_ENUMERATION_EXTENSION_NAME);
+#endif
 
     createInfo.flags |= VK_INSTANCE_CREATE_ENUMERATE_PORTABILITY_BIT_KHR;
 
@@ -377,14 +379,19 @@ void Revid::VulkanRenderer::pickPhysicalDevice()
     std::vector<VkPhysicalDevice> devices(deviceCount);
     vkEnumeratePhysicalDevices(m_instance, &deviceCount, devices.data());
 
-    for (const auto& device : devices)
-    {
-        if (isDeviceSuitable(device))
-        {
-            m_physicalDevice = device;
-            break;
-        }
-    }
+    // for (const auto& device : devices)
+    // {
+    // 	VkPhysicalDeviceProperties prop;
+    // 	vkGetPhysicalDeviceProperties(device, &prop);
+    // 	std::cout << prop.deviceName << std::endl;
+    // 	prop.
+    //     if (isDeviceSuitable(device))
+    //     {
+    //         m_physicalDevice = device;
+    //         // break;
+    //     }
+    // }
+	m_physicalDevice = devices[1];
 
     if (m_physicalDevice == VK_NULL_HANDLE || deviceCount == 0)
     {
@@ -1182,7 +1189,7 @@ void Revid::VulkanRenderer::updateUniformBuffer(uint32_t currentImage, int mesh_
 	// ubo.view = glm::lookAt(glm::vec3(2.0f, 2.0f, 2.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
 	// ubo.proj = ServiceLocator::GetCamera()->GetProjectionMatrix();
 
-	ubo.proj = glm::perspective(glm::radians(45.0f), m_swapChainExtent.width / (float) m_swapChainExtent.height, 0.1f, 10.0f);
+	ubo.proj = ServiceLocator::GetCamera()->GetProjectionMatrix();
 	ubo.view = ServiceLocator::GetCamera()->GetViewMatrix();
 	ubo.proj[1][1] *= -1;
 

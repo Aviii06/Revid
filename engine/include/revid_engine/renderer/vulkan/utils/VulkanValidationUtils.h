@@ -1,5 +1,6 @@
 #pragma once
 #include "revid_engine/renderer/vulkan/VulkanRenderer.h"
+#include <cstring>
 
 bool Revid::VulkanRenderer::checkValidationLayers()
 {

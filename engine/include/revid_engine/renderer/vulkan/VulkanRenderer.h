@@ -6,6 +6,7 @@
 #include "Mesh.h"
 #include "Vertex.h"
 #include "types/SmartPointers.h"
+#include <optional>
 
 #define MAX_MESHES_ALLOWED 1000
 

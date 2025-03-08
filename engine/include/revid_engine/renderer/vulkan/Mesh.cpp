@@ -101,6 +101,7 @@ Revid::Mesh::Mesh(String file_name)
 		m_indices[i] = i;
 	}
 
+	m_modelMatrix = glm::mat4(1.0f);
 	m_device = ServiceLocator::GetRenderer()->GetDeivce();
 	createVertexBuffer();
 	createIndexBuffer();

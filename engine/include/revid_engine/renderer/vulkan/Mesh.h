@@ -18,6 +18,8 @@ namespace Revid
 		int GetIndicesSize() { return m_indices.size(); }
 		int GetInstanceCount() { return m_instanceCount; }
 		void SetInstanceCount(int instanceCount) { m_instanceCount = instanceCount; }
+		glm::mat4 GetModelMatrix() const { return m_modelMatrix; }
+		void SetModelMatrix(glm::mat4 modelMatrix) { m_modelMatrix =  modelMatrix; }
 
 	private:
 		void createVertexBuffer();

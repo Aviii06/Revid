@@ -64,6 +64,7 @@ namespace Revid
         void createUniformBuffers();
         void createDescriptorPool();
         void createDescriptorSets();
+        void createDescriptorSetsForMeshes();
         void createCommandBuffer();
         void createSyncObjects();
         void recreateSwapChain();
@@ -109,7 +110,7 @@ namespace Revid
         void copyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size);
 
     private:
-        void updateUniformBuffer(uint32_t currentImage);
+        void updateUniformBuffer(uint32_t currentImage, int mesh_index);
         void createImage(
             VkDevice device,
             uint32_t width,

@@ -73,8 +73,6 @@ void Revid::VulkanRenderer::Render()
 		throw RevidRuntimeException("failed to acquire swap chain image!");
 	}
 
-	updateUniformBuffer(m_currentFrame);
-
 	vkResetFences(m_device, 1, &m_inFlightFences[m_currentFrame]);
 
 	vkResetCommandBuffer(m_commandBuffers[m_currentFrame], 0);
@@ -1172,7 +1170,7 @@ void Revid::VulkanRenderer::recreateSwapChain()
 	createFramebuffers();
 }
 
-void Revid::VulkanRenderer::updateUniformBuffer(uint32_t currentImage)
+void Revid::VulkanRenderer::updateUniformBuffer(uint32_t currentImage, int mesh_index)
 {
 	static auto startTime = std::chrono::high_resolution_clock::now();
 
@@ -1180,7 +1178,7 @@ void Revid::VulkanRenderer::updateUniformBuffer(uint32_t currentImage)
 	float time = std::chrono::duration<float, std::chrono::seconds::period>(currentTime - startTime).count();
 
 	UniformBufferObject ubo{};
-	ubo.model = glm::rotate(glm::mat4(1.0f), time * glm::radians(90.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+	ubo.model = m_meshes[mesh_index]->GetModelMatrix();
 	// ubo.view = glm::lookAt(glm::vec3(2.0f, 2.0f, 2.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
 	// ubo.proj = ServiceLocator::GetCamera()->GetProjectionMatrix();
 
@@ -1287,4 +1285,3 @@ void Revid::VulkanRenderer::createDescriptorSets()
 		vkUpdateDescriptorSets(m_device, 3, descriptorWrites, 0, nullptr);
 	}
 }
-

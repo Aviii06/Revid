@@ -55,6 +55,13 @@ void Revid::Application::Run()
     		ServiceLocator::GetCamera()->MoveRight();
     	}
 
+    	// Process Mouse Movements
+    	if (ServiceLocator::GetWindow()->IsKeyPressed(341))
+    	{
+    		xoffset = ServiceLocator::GetWindow()->GetMouseX() - lastX;
+			ServiceLocator::GetCamera()->ProcessMouseMovement();
+    	}
+
         ServiceLocator::GetRenderer()->Render();
     }
 }
@@ -84,6 +91,10 @@ void Revid::Application::intializeServices()
 	mesh->SetInstanceCount(10000);
 	ServiceLocator::GetRenderer()->AddMeshToScene(mesh);
 	Ref<Mesh> planeMesh = MakeRef<Mesh>("./assets/obj/plane.obj");
+	// The model matrix which is pretty big.
+	glm::mat4 modelMatrix = glm::mat4(10.0f);
+	planeMesh->SetModelMatrix(modelMatrix);
+	planeMesh->SetInstanceCount(100);
 	ServiceLocator::GetRenderer()->AddMeshToScene(planeMesh);
 }
 

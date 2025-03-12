@@ -60,11 +60,14 @@ namespace Revid
         void createLightingPipeline();
         void createFramebuffers();
         void createCommandPool();
+        void createDepthResources();
         void createVertexBuffer();
         void createIndexBuffer();
-        void createUniformBuffers();
-        void createDescriptorPool();
-        void createDescriptorSets();
+        void addUniformBuffers();
+        void updateGbufferDescriptorPool();
+        void addGbufferDescriptorSets();
+        void createLightingDescriptorPool();
+        void createLightingDescriptorSets();
         void createDescriptorSetsForMeshes();
         void createCommandBuffer();
         void createSyncObjects();
@@ -198,13 +201,17 @@ namespace Revid
         VkDeviceMemory m_gbufferIndexBufferMemory = VK_NULL_HANDLE;
         VkDeviceMemory m_lightingIndexBufferMemory = VK_NULL_HANDLE;
 
-        std::vector<VkBuffer> m_uniformBuffers;
-        std::vector<VkDeviceMemory> m_uniformBuffersMemory;
-        std::vector<void*> m_uniformBuffersMapped;
+        Vector<Vector<VkBuffer>> m_uniformBuffers;
+        Vector<Vector<VkDeviceMemory>> m_uniformBuffersMemory;
+        Vector<Vector<void*>> m_uniformBuffersMapped;
         VkDescriptorPool m_gbufferDescriptorPool;
-        Vector<VkDescriptorSet> m_gbufferDescriptorSets;
+        Vector<Vector<VkDescriptorSet>> m_gbufferDescriptorSets;
         VkDescriptorPool m_lightingDescriptorPool;
         Vector<VkDescriptorSet> m_lightingDescriptorSets;
+
+        VkImage m_depthImage;
+        VkDeviceMemory m_depthImageMemory;
+        VkImageView m_depthImageView;
 
 
         Vector<SimpleVertex> m_vertices = {

@@ -2,6 +2,7 @@
 #include <types/Containers.h>
 #include <cstdint>
 #include <any>
+#include <maths/Vec.h>
 
 namespace Revid
 {
@@ -38,7 +39,7 @@ namespace Revid
         virtual void GetDrawSurface(Map<SurfaceArgs, int*>) = 0;
 
         virtual bool IsKeyPressed(int key) = 0;
-        // virtual float GetMouseX() = 0;
-        // virtual float GetMouseY() = 0;
+        virtual bool IsMouseButtonPressed(int button) = 0;
+        virtual Maths::Vec2 GetMousePos() = 0;
     };
 }

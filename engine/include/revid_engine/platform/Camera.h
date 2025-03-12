@@ -18,7 +18,7 @@ namespace Revid
         float m_FarClip = 50000000.0f;
         float m_AspectRatio = 1.7778f; // 16:9 = m_ViewportWidth / m_ViewportHeight
 
-        Maths::Vec3 m_Front = Maths::Vec3(0.0f, 0.0f, 1.0f);
+        Maths::Vec3 m_Front = Maths::Vec3(0.0f, 0.0f, -1.0f);
         Maths::Vec3 m_Up = Maths::Vec3(0.0f, 1.0f, 0.0f);
         Maths::Vec3 m_Right = Maths::Vec3(1.0f, 0.0f, 0.0f);
 
@@ -62,7 +62,7 @@ namespace Revid
         void MoveUp();
         void MoveDown();
         void ProcessMouseScroll(float scrollOffset);
-        void ProcessMouseMovement(float xOffset, float yOffset, bool constrainPitch);
+        void ProcessMouseMovement(double xOffset, double yOffset, bool constrainPitch);
     };
 }
 

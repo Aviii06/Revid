@@ -47,11 +47,11 @@ void Revid::VulkanRenderer::Init(const RendererSettings& rendererSettings)
 	createFramebuffers();
 
 	createCommandPool();
+	createDepthResources();
 	createVertexBuffer();
 	createIndexBuffer();
-	createUniformBuffers();
-	createDescriptorPool();
-	createDescriptorSets();
+	createLightingDescriptorPool();
+	createLightingDescriptorSets();
 	createCommandBuffer();
 	createSyncObjects();
 }
@@ -138,6 +138,9 @@ void Revid::VulkanRenderer::UpdateIndices(Vector<uint16_t> indices)
 void Revid::VulkanRenderer::AddMeshToScene(Ref<Mesh> mesh)
 {
 	m_meshes.push_back(std::move(mesh));
+	addUniformBuffers();
+	updateGbufferDescriptorPool();
+	addGbufferDescriptorSets();
 }
 
 
@@ -246,9 +249,15 @@ void Revid::VulkanRenderer::Shutdown()
 {
 	cleanupSwapChain();
 
-	for (size_t i = 0; i < m_rendererSettings.MAX_FRAMES_IN_FLIGHT; i++) {
-		vkDestroyBuffer(m_device, m_uniformBuffers[i], nullptr);
-		vkFreeMemory(m_device, m_uniformBuffersMemory[i], nullptr);
+	for (size_t i = 0; i < m_rendererSettings.MAX_FRAMES_IN_FLIGHT; i++)
+	{
+		for (size_t j = 0; j < m_meshes.size(); j++)
+		{
+			vkDestroyBuffer(m_device, m_uniformBuffers[j][i], nullptr);
+			vkFreeMemory(m_device, m_uniformBuffersMemory[j][i], nullptr);
+		}
+
+
 	}
 
 	vkDestroyDescriptorSetLayout(m_device, m_gbufferDescriptorSetLayout, nullptr);
@@ -379,19 +388,14 @@ void Revid::VulkanRenderer::pickPhysicalDevice()
     std::vector<VkPhysicalDevice> devices(deviceCount);
     vkEnumeratePhysicalDevices(m_instance, &deviceCount, devices.data());
 
-    // for (const auto& device : devices)
-    // {
-    // 	VkPhysicalDeviceProperties prop;
-    // 	vkGetPhysicalDeviceProperties(device, &prop);
-    // 	std::cout << prop.deviceName << std::endl;
-    // 	prop.
-    //     if (isDeviceSuitable(device))
-    //     {
-    //         m_physicalDevice = device;
-    //         // break;
-    //     }
-    // }
-	m_physicalDevice = devices[1];
+    for (const auto& device : devices)
+    {
+        if (isDeviceSuitable(device))
+        {
+            m_physicalDevice = device;
+            // break;
+        }
+    }
 
     if (m_physicalDevice == VK_NULL_HANDLE || deviceCount == 0)
     {
@@ -1041,6 +1045,7 @@ void Revid::VulkanRenderer::createSyncObjects()
 	for (int i = 0; i < m_rendererSettings.MAX_FRAMES_IN_FLIGHT; i++)
 	{
 		if (vkCreateSemaphore(m_device, &semaphoreInfo, nullptr, &m_imageAvailableSemaphores[i]) != VK_SUCCESS ||
+
 			vkCreateSemaphore(m_device, &semaphoreInfo, nullptr, &m_renderFinishedSemaphores[i]) != VK_SUCCESS ||
 			vkCreateFence(m_device, &fenceInfo, nullptr, &m_inFlightFences[i]) != VK_SUCCESS)
 		{
@@ -1049,6 +1054,12 @@ void Revid::VulkanRenderer::createSyncObjects()
 		}
 	}
 }
+
+void Revid::VulkanRenderer::createDepthResources()
+{
+
+}
+
 
 void Revid::VulkanRenderer::createVertexBuffer()
 {
@@ -1129,29 +1140,37 @@ void Revid::VulkanRenderer::createIndexBuffer()
 	vkFreeMemory(m_device, stagingBufferMemory, nullptr);
 }
 
-void Revid::VulkanRenderer::createUniformBuffers()
+void Revid::VulkanRenderer::addUniformBuffers()
 {
 	VkDeviceSize bufferSize = sizeof(UniformBufferObject);
 
-	m_uniformBuffers.resize(m_rendererSettings.MAX_FRAMES_IN_FLIGHT);
-	m_uniformBuffersMemory.resize(m_rendererSettings.MAX_FRAMES_IN_FLIGHT);
-	m_uniformBuffersMapped.resize(m_rendererSettings.MAX_FRAMES_IN_FLIGHT);
+	size_t size = m_meshes.size();
+
+	m_uniformBuffers.resize(size);
+	m_uniformBuffersMemory.resize(size);
+	m_uniformBuffersMapped.resize(size);
+	m_uniformBuffers[size-1].resize(m_rendererSettings.MAX_FRAMES_IN_FLIGHT);
+	m_uniformBuffersMemory[size-1].resize(m_rendererSettings.MAX_FRAMES_IN_FLIGHT);
+	m_uniformBuffersMapped[size-1].resize(m_rendererSettings.MAX_FRAMES_IN_FLIGHT);
 
 	for (size_t i = 0; i < m_rendererSettings.MAX_FRAMES_IN_FLIGHT; i++)
 	{
-		createBuffer(bufferSize, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, m_uniformBuffers[i], m_uniformBuffersMemory[i]);
+		createBuffer(bufferSize, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, m_uniformBuffers[size-1][i], m_uniformBuffersMemory[size-1][i]);
 
-		vkMapMemory(m_device, m_uniformBuffersMemory[i], 0, bufferSize, 0, &m_uniformBuffersMapped[i]);
+		vkMapMemory(m_device, m_uniformBuffersMemory[size-1][i], 0, bufferSize, 0, &m_uniformBuffersMapped[size-1][i]);
 	}
 }
 
 
-void Revid::VulkanRenderer::cleanupSwapChain() {
-	for (size_t i = 0; i < m_swapChainFramebuffers.size(); i++) {
+void Revid::VulkanRenderer::cleanupSwapChain()
+{
+	for (size_t i = 0; i < m_swapChainFramebuffers.size(); i++)
+	{
 		vkDestroyFramebuffer(m_device, m_swapChainFramebuffers[i], nullptr);
 	}
 
-	for (size_t i = 0; i < m_swapChainImageViews.size(); i++) {
+	for (size_t i = 0; i < m_swapChainImageViews.size(); i++)
+	{
 		vkDestroyImageView(m_device, m_swapChainImageViews[i], nullptr);
 	}
 
@@ -1193,10 +1212,10 @@ void Revid::VulkanRenderer::updateUniformBuffer(uint32_t currentImage, int mesh_
 	ubo.view = ServiceLocator::GetCamera()->GetViewMatrix();
 	ubo.proj[1][1] *= -1;
 
-	memcpy(m_uniformBuffersMapped[currentImage], &ubo, sizeof(ubo));
+	memcpy(m_uniformBuffersMapped[mesh_index][currentImage], &ubo, sizeof(ubo));
 }
 
-void Revid::VulkanRenderer::createDescriptorPool()
+void Revid::VulkanRenderer::updateGbufferDescriptorPool()
 {
 	VkDescriptorPoolSize poolSize{};
 	poolSize.type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
@@ -1206,13 +1225,17 @@ void Revid::VulkanRenderer::createDescriptorPool()
 	gbufferPoolInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
 	gbufferPoolInfo.poolSizeCount = 1;
 	gbufferPoolInfo.pPoolSizes = &poolSize;
-	gbufferPoolInfo.maxSets = static_cast<uint32_t>(m_rendererSettings.MAX_FRAMES_IN_FLIGHT);
+	gbufferPoolInfo.maxSets = static_cast<uint32_t>(m_rendererSettings.MAX_FRAMES_IN_FLIGHT * m_meshes.size());
 
 	if (vkCreateDescriptorPool(m_device, &gbufferPoolInfo, nullptr, &m_gbufferDescriptorPool) != VK_SUCCESS)
 	{
 		throw std::runtime_error("failed to create gbuffer descriptor pool!");
 	}
+}
 
+void Revid::VulkanRenderer::createLightingDescriptorPool()
+{
+	VkDescriptorPoolSize poolSize{};
 	poolSize.type = VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT;
 	poolSize.descriptorCount = 3 * static_cast<uint32_t>(m_rendererSettings.MAX_FRAMES_IN_FLIGHT);
 	VkDescriptorPoolCreateInfo lightingPoolInfo{};
@@ -1227,10 +1250,9 @@ void Revid::VulkanRenderer::createDescriptorPool()
 	}
 }
 
-void Revid::VulkanRenderer::createDescriptorSets()
+void Revid::VulkanRenderer::addGbufferDescriptorSets()
 {
-	m_gbufferDescriptorSets.resize(m_rendererSettings.MAX_FRAMES_IN_FLIGHT);
-	m_lightingDescriptorSets.resize(m_rendererSettings.MAX_FRAMES_IN_FLIGHT);
+	m_gbufferDescriptorSets.resize(m_meshes.size());
 
 	Vector<VkDescriptorSetLayout> gbufferLayouts(m_rendererSettings.MAX_FRAMES_IN_FLIGHT, m_gbufferDescriptorSetLayout);
 	VkDescriptorSetAllocateInfo allocInfo{};
@@ -1239,11 +1261,39 @@ void Revid::VulkanRenderer::createDescriptorSets()
 	allocInfo.descriptorSetCount = static_cast<uint32_t>(m_rendererSettings.MAX_FRAMES_IN_FLIGHT);
 	allocInfo.pSetLayouts = gbufferLayouts.data();
 
-	if (vkAllocateDescriptorSets(m_device, &allocInfo, m_gbufferDescriptorSets.data()) != VK_SUCCESS)
+	size_t size = m_meshes.size();
+	m_gbufferDescriptorSets[size-1].resize(m_rendererSettings.MAX_FRAMES_IN_FLIGHT);
+	if (vkAllocateDescriptorSets(m_device, &allocInfo, m_gbufferDescriptorSets[size-1].data()) != VK_SUCCESS)
 	{
 		throw std::runtime_error("failed to allocate descriptor sets!");
 	}
 
+	for (size_t i = 0; i < m_rendererSettings.MAX_FRAMES_IN_FLIGHT; i++)
+	{
+		VkDescriptorBufferInfo bufferInfo{};
+		bufferInfo.buffer = m_uniformBuffers[size-1][i];
+		bufferInfo.offset = 0;
+		bufferInfo.range = sizeof(UniformBufferObject);
+
+		VkWriteDescriptorSet descriptorWrite{};
+		descriptorWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+		descriptorWrite.dstSet = m_gbufferDescriptorSets[size-1][i];
+		descriptorWrite.dstBinding = 0;
+		descriptorWrite.dstArrayElement = 0;
+		descriptorWrite.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+		descriptorWrite.descriptorCount = 1;
+		descriptorWrite.pBufferInfo = &bufferInfo;
+
+		vkUpdateDescriptorSets(m_device, 1, &descriptorWrite, 0, nullptr);
+	}
+}
+
+void Revid::VulkanRenderer::createLightingDescriptorSets()
+{
+	m_lightingDescriptorSets.resize(m_rendererSettings.MAX_FRAMES_IN_FLIGHT);
+	VkDescriptorSetAllocateInfo allocInfo{};
+	allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
+	allocInfo.descriptorSetCount = static_cast<uint32_t>(m_rendererSettings.MAX_FRAMES_IN_FLIGHT);
 	Vector<VkDescriptorSetLayout> lightingLayouts(m_rendererSettings.MAX_FRAMES_IN_FLIGHT, m_lightingDescriptorSetLayout);
 	allocInfo.descriptorPool = m_lightingDescriptorPool;
 	allocInfo.pSetLayouts = lightingLayouts.data();
@@ -1255,22 +1305,6 @@ void Revid::VulkanRenderer::createDescriptorSets()
 
 	for (size_t i = 0; i < m_rendererSettings.MAX_FRAMES_IN_FLIGHT; i++)
 	{
-		VkDescriptorBufferInfo bufferInfo{};
-		bufferInfo.buffer = m_uniformBuffers[i];
-		bufferInfo.offset = 0;
-		bufferInfo.range = sizeof(UniformBufferObject);
-
-		VkWriteDescriptorSet descriptorWrite{};
-		descriptorWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-		descriptorWrite.dstSet = m_gbufferDescriptorSets[i];
-		descriptorWrite.dstBinding = 0;
-		descriptorWrite.dstArrayElement = 0;
-		descriptorWrite.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-		descriptorWrite.descriptorCount = 1;
-		descriptorWrite.pBufferInfo = &bufferInfo;
-
-		vkUpdateDescriptorSets(m_device, 1, &descriptorWrite, 0, nullptr);
-
 		VkDescriptorImageInfo inputAttachmentInfos[3] = {
 			{VK_NULL_HANDLE, m_positionImageViews[i], VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL},
 			{VK_NULL_HANDLE, m_colorImageViews[i], VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL},

@@ -14,11 +14,23 @@ Revid::Application::Application()
 Revid::Application::Application(String title)
     : m_title(std::move(title)), m_isRunning(true)
 {
-	system("pwd");
     Logger::Log(LogLevel::INFO, "Initialising Revid Application named: " + title);
     initializeLogger();
     intializeServices();
 
+
+	Ref<Mesh> mesh = MakeRef<Mesh>("./assets/obj/grass.obj");
+	mesh->SetInstanceCount(10000);
+	glm::mat4 modelMatrix2 = glm::mat4(1.0f);
+	mesh->SetModelMatrix(modelMatrix2);
+	ServiceLocator::GetRenderer()->AddMeshToScene(mesh);
+	Ref<Mesh> planeMesh = MakeRef<Mesh>("./assets/obj/plane.obj");
+	// The model matrix which is pretty big.
+	planeMesh->SetInstanceCount(1);
+	// Translate the plane to 500, 500.
+	glm::mat4 modelMatrix = glm::mat4(10.0f);
+	planeMesh->SetModelMatrix(modelMatrix);
+	// ServiceLocator::GetRenderer()->AddMeshToScene(planeMesh);
 	//ServiceLocator::GetRenderer()->UpdateObj("./assets/obj/bunny.obj");
 }
 
@@ -39,38 +51,7 @@ void Revid::Application::Run()
 
         Update(0.01f);
 
-    	// TODO: Abstract this out to a InputHandler
-		if (ServiceLocator::GetWindow()->IsKeyPressed(87))
-		{
-			ServiceLocator::GetCamera()->MoveForward();
-		}
-    	if (ServiceLocator::GetWindow()->IsKeyPressed(83))
-    	{
-			ServiceLocator::GetCamera()->MoveBackward();
-    	}
-    	if (ServiceLocator::GetWindow()->IsKeyPressed(65))
-    	{
-    		ServiceLocator::GetCamera()->MoveLeft();
-    	}
-    	if (ServiceLocator::GetWindow()->IsKeyPressed(68))
-    	{
-    		ServiceLocator::GetCamera()->MoveRight();
-    	}
-    	if (ServiceLocator::GetWindow()->IsKeyPressed('L'))
-    	{
-    		ServiceLocator::GetCamera()->MoveUp();
-    	}
-    	if (ServiceLocator::GetWindow()->IsKeyPressed('H'))
-    	{
-    		ServiceLocator::GetCamera()->MoveDown();
-    	}
-
-   //  	// Process Mouse Movements
-   //  	if (ServiceLocator::GetWindow()->IsKeyPressed(341))
-   //  	{
-   //  		xoffset = ServiceLocator::GetWindow()->GetMouseX() - lastX;
-			// ServiceLocator::GetCamera()->ProcessMouseMovement();
-   //  	}
+    	ServiceLocator::GetInputHandler()->HandleInput();
 
         ServiceLocator::GetRenderer()->Render();
     }
@@ -96,16 +77,8 @@ void Revid::Application::intializeServices()
     };
 
     ServiceLocator::Provide(new VulkanRenderer(), settings);
-    system("pwd");
-	Ref<Mesh> mesh = MakeRef<Mesh>("./assets/obj/grass.obj");
-	mesh->SetInstanceCount(10000);
-	ServiceLocator::GetRenderer()->AddMeshToScene(mesh);
-	Ref<Mesh> planeMesh = MakeRef<Mesh>("./assets/obj/plane.obj");
-	// The model matrix which is pretty big.
-	glm::mat4 modelMatrix = glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, -10.0f, 0.0f)) * glm::mat4(10.0f);
-	planeMesh->SetModelMatrix(modelMatrix);
-	planeMesh->SetInstanceCount(100);
-	ServiceLocator::GetRenderer()->AddMeshToScene(planeMesh);
+
+	ServiceLocator::Provide(new InputHandler());
 }
 
 void Revid::Application::initializeLogger()

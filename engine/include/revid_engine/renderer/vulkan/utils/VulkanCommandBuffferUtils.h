@@ -61,7 +61,7 @@ inline void Revid::VulkanRenderer::recordCommandBuffer(const VkCommandBuffer& co
 	{
         updateUniformBuffer(m_currentFrame, i);
 		vkCmdBindVertexBuffers(commandBuffer, 0, 1, &vertexBuffers[i], &indexOffsets[i]);
-		vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_gbufferPipelineLayout, 0, 1, &m_gbufferDescriptorSets[m_currentFrame], 0, nullptr);
+		vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_gbufferPipelineLayout, 0, 1, &m_gbufferDescriptorSets[i][m_currentFrame], 0, nullptr);
         VkBuffer indexBuffer = m_meshes[i]->GetIndexBuffer();
         int indexCount = m_meshes[i]->GetIndicesSize();
 		vkCmdBindIndexBuffer(commandBuffer, indexBuffer, indexOffsets[i], VK_INDEX_TYPE_UINT16);

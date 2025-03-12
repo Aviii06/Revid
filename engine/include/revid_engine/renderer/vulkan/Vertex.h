@@ -10,8 +10,9 @@ namespace Revid
     struct SimpleVertex
     {
         Maths::Vec3 m_position;
-        // Maths::Vec3 m_normal;
+        Maths::Vec3 m_normal;
         // Maths::Vec3 m_tangent;
+
         Maths::Vec3 m_color;
         // Maths::Vec2 m_texcoord;
 
@@ -26,9 +27,9 @@ namespace Revid
         }
 
 
-        static std::array<VkVertexInputAttributeDescription, 2> GetAttributeDescriptions()
+        static std::array<VkVertexInputAttributeDescription, 3> GetAttributeDescriptions()
         {
-            std::array<VkVertexInputAttributeDescription, 2> attributeDescriptions{};
+            std::array<VkVertexInputAttributeDescription, 3> attributeDescriptions{};
 
             attributeDescriptions[0].binding = 0;
             attributeDescriptions[0].location = 0;
@@ -40,6 +41,11 @@ namespace Revid
             attributeDescriptions[1].location = 1;
             attributeDescriptions[1].format = VK_FORMAT_R32G32B32_SFLOAT;
             attributeDescriptions[1].offset = offsetof(SimpleVertex, m_color);
+
+            attributeDescriptions[2].binding = 0;
+            attributeDescriptions[2].location = 2;
+            attributeDescriptions[2].format = VK_FORMAT_R32G32B32_SFLOAT;
+            attributeDescriptions[2].offset = offsetof(SimpleVertex, m_normal);
 
             return attributeDescriptions;
         }

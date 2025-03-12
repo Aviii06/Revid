@@ -98,11 +98,13 @@ Revid::Mesh::Mesh(String file_name)
 	for (size_t i = 0; i < size; i++)
 	{
 		m_vertices[i].m_position = vertex_positions[vertex_position_indicies[i] - 1];
+		m_vertices[i].m_normal = vertex_normals[vertex_normal_indicies[i] - 1];
 		m_vertices[i].m_color = Maths::Vec3(j, (j+1)/2.0, (j+2)/3.0);
 		m_indices[i] = i;
 	}
 	j++;
 
+	m_instanceCount = 1;
 	m_modelMatrix = glm::mat4(1.0f);
 	m_device = ServiceLocator::GetRenderer()->GetDeivce();
 	createVertexBuffer();

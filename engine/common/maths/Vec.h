@@ -97,7 +97,7 @@ namespace Revid::Maths
 	 */
 	struct Vec2 : VectorOperationMixin<Vec2>
 	{
-		float x, y;
+		double x, y;
 
 		Vec2()
 		    : x(0.0f)

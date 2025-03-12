@@ -9,7 +9,8 @@ set(SOURCES
         src/platform/Application.cpp
         include/revid_engine/renderer/vulkan/VulkanRenderer.cpp
         include/revid_engine/platform/Camera.cpp
-        include/revid_engine/renderer/vulkan/Mesh.cpp)
+        include/revid_engine/renderer/vulkan/Mesh.cpp
+        include/revid_engine/platform/InputHandler.cpp)
 add_library(${PROJECT_NAME} ${SOURCES})
 
 target_include_directories(${PROJECT_NAME}
@@ -42,4 +43,4 @@ foreach(shader ${SHADERS})
             COMMAND glslc -c ${shader} -o ${CMAKE_BINARY_DIR}/editor/assets/shaders/${SHADER_NAME}.spv)
 endforeach()
 
-file (COPY ${SHADERS} ${OBJS} DESTINATION ${CMAKE_BINARY_DIR}/editor/assets/obj/)
+file (COPY ${OBJS} DESTINATION ${CMAKE_BINARY_DIR}/editor/assets/obj/)

@@ -20,7 +20,7 @@ Revid::Application::Application(String title)
 
 
 	Ref<Mesh> mesh = MakeRef<Mesh>("./assets/obj/grass.obj");
-	mesh->SetInstanceCount(10000);
+	mesh->SetInstanceCount(2e4);
 	glm::mat4 modelMatrix2 = glm::mat4(1.0f);
 	mesh->SetModelMatrix(modelMatrix2);
 	ServiceLocator::GetRenderer()->AddMeshToScene(mesh);
@@ -28,9 +28,9 @@ Revid::Application::Application(String title)
 	// The model matrix which is pretty big.
 	planeMesh->SetInstanceCount(1);
 	// Translate the plane to 500, 500.
-	glm::mat4 modelMatrix = glm::mat4(10.0f);
+	glm::mat4 modelMatrix = glm::translate(glm::mat4(100.0f), glm::vec3(0.0f, 0.0f, 0.0f));
 	planeMesh->SetModelMatrix(modelMatrix);
-	// ServiceLocator::GetRenderer()->AddMeshToScene(planeMesh);
+	ServiceLocator::GetRenderer()->AddMeshToScene(planeMesh);
 	//ServiceLocator::GetRenderer()->UpdateObj("./assets/obj/bunny.obj");
 }
 

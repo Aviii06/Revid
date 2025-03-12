@@ -18,14 +18,17 @@ inline void Revid::VulkanRenderer::recordCommandBuffer(const VkCommandBuffer& co
     renderPassInfo.renderArea.offset = {0, 0};
     renderPassInfo.renderArea.extent = m_swapChainExtent;
 
-    VkClearValue clearValues[4] = {
+    Vector<VkClearValue> clearValues = {
         { {0.0f, 0.0f, 0.0f, 1.0f} }, // Position
         { {0.0f, 0.0f, 0.0f, 1.0f} }, // Color
         { {0.0f, 0.0f, 0.0f, 1.0f} }, // Normal
+        {}, // Depth
         { {0.0f, 0.0f, 0.0f, 1.0f} }  // Swapchain
     };
-    renderPassInfo.clearValueCount = 4;
-    renderPassInfo.pClearValues = clearValues;
+
+    clearValues[3].depthStencil = {1.0f, 0};
+    renderPassInfo.clearValueCount = static_cast<uint32_t>(clearValues.size());
+    renderPassInfo.pClearValues = clearValues.data();
 
     vkCmdBeginRenderPass(commandBuffer, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
 

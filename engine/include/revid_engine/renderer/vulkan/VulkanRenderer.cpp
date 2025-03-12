@@ -7,6 +7,7 @@
 #include "utils/VulkanShaderUtils.h"
 #include "utils/VulkanCommandBuffferUtils.h"
 #include "utils/VulkanBufferUtils.h"
+#include "utils/VulkanDepthBuffer.h"
 
 #include <revid_engine/ServiceLocater.h>
 #include <exceptions/RevidRuntimeException.h>
@@ -47,7 +48,6 @@ void Revid::VulkanRenderer::Init(const RendererSettings& rendererSettings)
 	createFramebuffers();
 
 	createCommandPool();
-	createDepthResources();
 	createVertexBuffer();
 	createIndexBuffer();
 	createLightingDescriptorPool();
@@ -517,16 +517,28 @@ void Revid::VulkanRenderer::createSwapChain()
 
 void Revid::VulkanRenderer::createGbufferImages()
 {
+	m_depthImages.resize(m_swapChainImages.size());
 	m_positionImages.resize(m_swapChainImages.size());
 	m_normalImages.resize(m_swapChainImages.size());
 	m_colorImages.resize(m_swapChainImages.size());
 
+	m_depthImageMemories.resize(m_swapChainImages.size());
 	m_positionImageMemories.resize(m_swapChainImages.size());
 	m_normalImageMemories.resize(m_swapChainImages.size());
 	m_colorImageMemories.resize(m_swapChainImages.size());
 
 	for (size_t i = 0; i < m_swapChainImages.size(); i++)
 	{
+		createImage(
+			m_device,
+			m_swapChainExtent.width,
+			m_swapChainExtent.height,
+			findDepthFormat(),
+			VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT,
+			VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
+			m_depthImages[i],
+			m_depthImageMemories[i]);
+
 		createImage(
 			m_device,
 			m_swapChainExtent.width,
@@ -563,6 +575,7 @@ void Revid::VulkanRenderer::createGbufferImages()
 void Revid::VulkanRenderer::createImageViews()
 {
 	m_swapChainImageViews.resize(m_swapChainImages.size());
+	m_depthImageViews.resize(m_swapChainImages.size());
 	m_positionImageViews.resize(m_swapChainImages.size());
 	m_colorImageViews.resize(m_swapChainImages.size());
 	m_normalImageViews.resize(m_swapChainImages.size());
@@ -574,6 +587,12 @@ void Revid::VulkanRenderer::createImageViews()
 			m_swapChainImages[i],
 			m_swapChainImageFormat,
 			VK_IMAGE_ASPECT_COLOR_BIT);
+
+		m_depthImageViews[i] = createImageView(
+			m_device,
+			m_depthImages[i],
+			findDepthFormat(),
+			VK_IMAGE_ASPECT_DEPTH_BIT);
 
 		m_positionImageViews[i] = createImageView(
 			m_device,
@@ -597,7 +616,7 @@ void Revid::VulkanRenderer::createImageViews()
 
 void Revid::VulkanRenderer::createRenderPass()
 {
-	VkAttachmentDescription attachments[4] = {};
+	VkAttachmentDescription attachments[5] = {};
 
 	// Position attachment
 	attachments[0].format = VK_FORMAT_R16G16B16A16_SFLOAT;
@@ -623,13 +642,20 @@ void Revid::VulkanRenderer::createRenderPass()
 	attachments[2].initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
 	attachments[2].finalLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
 
-	// Swapchain attachment
-	attachments[3].format = m_swapChainImageFormat; // Retrieved from swapchain
+	attachments[3].format = findDepthFormat();
 	attachments[3].samples = VK_SAMPLE_COUNT_1_BIT;
 	attachments[3].loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
-	attachments[3].storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+	attachments[3].storeOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
 	attachments[3].initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-	attachments[3].finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
+	attachments[3].finalLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+
+	// Swapchain attachment
+	attachments[4].format = m_swapChainImageFormat; // Retrieved from swapchain
+	attachments[4].samples = VK_SAMPLE_COUNT_1_BIT;
+	attachments[4].loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+	attachments[4].storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+	attachments[4].initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+	attachments[4].finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
 
 
 	VkAttachmentReference geometryColorAttachments[3] = {
@@ -644,13 +670,16 @@ void Revid::VulkanRenderer::createRenderPass()
 		{2, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL}, // Normal
 	};
 
-	VkAttachmentReference lightingColorAttachment = {3, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL};
+	VkAttachmentReference geometryDepthStencilAttachment = {3, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL};
+
+	VkAttachmentReference lightingColorAttachment = {4, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL};
 
 	VkSubpassDescription subpasses[2] = {};
 	// Subpass 1
 	subpasses[0].pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
 	subpasses[0].colorAttachmentCount = 3;
 	subpasses[0].pColorAttachments = geometryColorAttachments;
+	subpasses[0].pDepthStencilAttachment = &geometryDepthStencilAttachment;
 	// Subpass 2
 	subpasses[1].pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
 	subpasses[1].inputAttachmentCount = 3;
@@ -664,10 +693,10 @@ void Revid::VulkanRenderer::createRenderPass()
 	// Geometry pass -> Lighting pass
 	dependencies[0].srcSubpass = 0;
 	dependencies[0].dstSubpass = 1;
-	dependencies[0].srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
-	dependencies[0].dstStageMask = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
+	dependencies[0].srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT | VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT;
+	dependencies[0].dstStageMask = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT | VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT;
 	dependencies[0].srcAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
-	dependencies[0].dstAccessMask = VK_ACCESS_INPUT_ATTACHMENT_READ_BIT;
+	dependencies[0].dstAccessMask = VK_ACCESS_INPUT_ATTACHMENT_READ_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
 	dependencies[0].dependencyFlags = VK_DEPENDENCY_BY_REGION_BIT;
 
 	// Lighting pass -> External (Swapchain)
@@ -684,7 +713,7 @@ void Revid::VulkanRenderer::createRenderPass()
 	// Render pass creation
 	VkRenderPassCreateInfo renderPassInfo{};
 	renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
-	renderPassInfo.attachmentCount = 4;
+	renderPassInfo.attachmentCount = 5;
 	renderPassInfo.pAttachments = attachments;
 	renderPassInfo.subpassCount = 2;
 	renderPassInfo.pSubpasses = subpasses;
@@ -832,6 +861,19 @@ void Revid::VulkanRenderer::createGbufferPipeline()
 		throw RevidRuntimeException("failed to create pipeline layout!");
 	}
 
+	VkPipelineDepthStencilStateCreateInfo depthStencil{};
+	depthStencil.sType = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO;
+	depthStencil.depthTestEnable = VK_TRUE;
+	depthStencil.depthWriteEnable = VK_TRUE;
+	depthStencil.depthCompareOp = VK_COMPARE_OP_LESS;
+	depthStencil.depthBoundsTestEnable = VK_FALSE;
+	depthStencil.minDepthBounds = 0.0f; // Optional
+	depthStencil.maxDepthBounds = 1.0f; // Optional
+	depthStencil.stencilTestEnable = VK_FALSE;
+	depthStencil.front = {}; // Optional
+	depthStencil.back = {}; // Optional
+
+
 	VkGraphicsPipelineCreateInfo pipelineInfo{};
 	pipelineInfo.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
 	pipelineInfo.stageCount = 2;
@@ -847,6 +889,7 @@ void Revid::VulkanRenderer::createGbufferPipeline()
 	pipelineInfo.renderPass = m_renderPass;
 	pipelineInfo.subpass = 0;
 	pipelineInfo.basePipelineHandle = VK_NULL_HANDLE;
+	pipelineInfo.pDepthStencilState = &depthStencil;
 
 	if (vkCreateGraphicsPipelines(m_device, VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &m_gbufferPipeline) != VK_SUCCESS)
 	{
@@ -985,13 +1028,14 @@ void Revid::VulkanRenderer::createFramebuffers()
 			m_positionImageViews[i],
 			m_colorImageViews[i],
 			m_normalImageViews[i],
+			m_depthImageViews[i],
 			m_swapChainImageViews[i]
 		};
 
 		VkFramebufferCreateInfo framebufferInfo{};
 		framebufferInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
 		framebufferInfo.renderPass = m_renderPass;
-		framebufferInfo.attachmentCount = 4;
+		framebufferInfo.attachmentCount = static_cast<uint32_t>(attachments.size());
 		framebufferInfo.pAttachments = attachments.data();
 		framebufferInfo.width = m_swapChainExtent.width;
 		framebufferInfo.height = m_swapChainExtent.height;
@@ -1054,12 +1098,6 @@ void Revid::VulkanRenderer::createSyncObjects()
 		}
 	}
 }
-
-void Revid::VulkanRenderer::createDepthResources()
-{
-
-}
-
 
 void Revid::VulkanRenderer::createVertexBuffer()
 {

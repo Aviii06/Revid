@@ -16,8 +16,8 @@ layout(location = 2) out vec3 v_normal;
 
 void main()
 {
-    float x = gl_InstanceIndex % 100;
-    float y = (gl_InstanceIndex/100) % 100;
+    float x = gl_InstanceIndex % 200;
+    float y = (gl_InstanceIndex/200) % 200;
     v_worldPos = (ubo.model *  vec4(inPosition, 1.0) + 0.25 * vec4(x, 0.0f, y, 0.0)).rgb;
     v_normal = normalize((ubo.model * vec4(inNormal, 0.0f)).rgb);
     gl_Position = ubo.proj * ubo.view * (vec4(v_worldPos, 1.0f));

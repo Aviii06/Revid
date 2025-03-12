@@ -29,8 +29,8 @@ namespace Revid
 
     struct SwapChainSupportDetails {
         VkSurfaceCapabilitiesKHR capabilities;
-        std::vector<VkSurfaceFormatKHR> formats;
-        std::vector<VkPresentModeKHR> presentModes;
+        Vector<VkSurfaceFormatKHR> formats;
+        Vector<VkPresentModeKHR> presentModes;
     };
 
     class VulkanRenderer : public Renderer
@@ -60,7 +60,6 @@ namespace Revid
         void createLightingPipeline();
         void createFramebuffers();
         void createCommandPool();
-        void createDepthResources();
         void createVertexBuffer();
         void createIndexBuffer();
         void addUniformBuffers();
@@ -107,6 +106,8 @@ namespace Revid
 
         VkShaderModule createShaderModule(const std::vector<char>& code);
         void recordCommandBuffer(const VkCommandBuffer& commandBuffer, uint32_t imageIndex);
+        VkFormat findSupportedFormat(const std::vector<VkFormat>& candidates, VkImageTiling tiling, VkFormatFeatureFlags features);
+        VkFormat findDepthFormat();
 
     public:
         void createBuffer(VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties, VkBuffer& buffer, VkDeviceMemory& bufferMemory);
@@ -146,24 +147,28 @@ namespace Revid
         VkQueue m_presentQueue;
         VkSurfaceKHR m_surface;
 		VkSwapchainKHR m_swapChain;
-        std::vector<VkImage> m_swapChainImages;
-        std::vector<VkImage> m_positionImages;
-        std::vector<VkImage> m_colorImages;
-        std::vector<VkImage> m_normalImages;
+
         VkFormat m_swapChainImageFormat;
         VkExtent2D m_swapChainExtent;
-        VkRenderPass m_renderPass;
 
-        std::vector<VkImageView> m_swapChainImageViews;
-        std::vector<VkImageView> m_positionImageViews;
-        std::vector<VkImageView> m_colorImageViews;
-        std::vector<VkImageView> m_normalImageViews;
+        Vector<VkImage> m_swapChainImages;
+        Vector<VkImage> m_depthImages;
+        Vector<VkImage> m_positionImages;
+        Vector<VkImage> m_colorImages;
+        Vector<VkImage> m_normalImages;
 
-        std::vector<VkDeviceMemory> m_positionImageMemories;
-        std::vector<VkDeviceMemory> m_colorImageMemories;
-        std::vector<VkDeviceMemory> m_normalImageMemories;
+        Vector<VkImageView> m_swapChainImageViews;
+        Vector<VkImageView> m_depthImageViews;
+        Vector<VkImageView> m_positionImageViews;
+        Vector<VkImageView> m_colorImageViews;
+        Vector<VkImageView> m_normalImageViews;
 
-        std::vector<VkFramebuffer> m_swapChainFramebuffers;
+        Vector<VkDeviceMemory> m_depthImageMemories;
+        Vector<VkDeviceMemory> m_positionImageMemories;
+        Vector<VkDeviceMemory> m_colorImageMemories;
+        Vector<VkDeviceMemory> m_normalImageMemories;
+
+        Vector<VkFramebuffer> m_swapChainFramebuffers;
         VkCommandPool m_commandPool;
         Vector<VkCommandBuffer> m_commandBuffers;
         VkPipeline m_gbufferPipeline;
@@ -172,12 +177,13 @@ namespace Revid
         VkPipelineLayout m_gbufferPipelineLayout;
         VkPipelineLayout m_lightingPipelineLayout;
 
+        VkRenderPass m_renderPass;
 
-        const std::vector<const char*> m_validationLayers = {
+        const Vector<const char*> m_validationLayers = {
             "VK_LAYER_KHRONOS_validation"
         };
 
-        const std::vector<const char*> m_deviceExtensions = {
+        const Vector<const char*> m_deviceExtensions = {
             VK_KHR_SWAPCHAIN_EXTENSION_NAME
         };
 
@@ -208,11 +214,6 @@ namespace Revid
         Vector<Vector<VkDescriptorSet>> m_gbufferDescriptorSets;
         VkDescriptorPool m_lightingDescriptorPool;
         Vector<VkDescriptorSet> m_lightingDescriptorSets;
-
-        VkImage m_depthImage;
-        VkDeviceMemory m_depthImageMemory;
-        VkImageView m_depthImageView;
-
 
         Vector<SimpleVertex> m_vertices = {
             {{-1.0f, -1.0f, 1.0f}, {1.0f, 0.0f, 0.0f}},

@@ -1,4 +1,4 @@
-#include "Mesh.h"
+#include <revid_engine/renderer/vulkan/Mesh.h>
 
 #include <revid_engine/ServiceLocater.h>
 

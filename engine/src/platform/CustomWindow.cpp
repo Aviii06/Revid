@@ -1,4 +1,4 @@
-#include "CustomWindow.h"
+#include <revid_engine/platform/CustomWindow.h>
 #include <exceptions/RevidRuntimeException.h>
 #include <revid_engine/ServiceLocater.h>
 

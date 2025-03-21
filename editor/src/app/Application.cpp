@@ -1,6 +1,6 @@
-#include "revid_engine/platform/Application.h"
+#include "Application.h"
 #include "revid_engine/ServiceLocater.h"
-#include "CustomWindow.h"
+#include <revid_engine/platform/CustomWindow.h>
 #define GLM_ENABLE_EXPERIMENTAL
 #include "glm/gtx/transform.hpp"
 #include "revid_engine/renderer/vulkan/VulkanRenderer.h"

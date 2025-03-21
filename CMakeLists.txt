@@ -6,5 +6,4 @@ set(CMAKE_CXX_SCAN_FOR_MODULES OFF)
 
 add_subdirectory(vendor)
 add_subdirectory(engine)
-
 add_subdirectory(editor)

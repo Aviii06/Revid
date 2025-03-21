@@ -1,5 +1,5 @@
-#include "Camera.h"
-#include "maths/VecHelper.h"
+#include <revid_engine/platform/Camera.h>
+#include <maths/VecHelper.h>
 #include <glm/glm.hpp>
 #include <glm/ext/matrix_transform.hpp>
 #include <glm/ext/matrix_clip_space.hpp>

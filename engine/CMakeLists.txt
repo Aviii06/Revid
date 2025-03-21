@@ -6,11 +6,11 @@ set(CMAKE_CXX_STANDARD 17)
 set(SOURCES
         src/platform/CustomWindow.cpp
         src/Engine.cpp
-        src/platform/Application.cpp
-        include/revid_engine/renderer/vulkan/VulkanRenderer.cpp
-        include/revid_engine/platform/Camera.cpp
-        include/revid_engine/renderer/vulkan/Mesh.cpp
-        include/revid_engine/platform/InputHandler.cpp)
+        src/renderer/vulkan/VulkanRenderer.cpp
+        src/platform/Camera.cpp
+        src/renderer/vulkan/Mesh.cpp
+        src/platform/InputHandler.cpp)
+
 add_library(${PROJECT_NAME} ${SOURCES})
 
 target_include_directories(${PROJECT_NAME}

@@ -1,7 +1,7 @@
 #pragma once
 #include <types/Containers.h>
 
-namespace Revid
+namespace RevidEditor
 {
     class Application
     {
@@ -12,6 +12,8 @@ namespace Revid
         void initializeLogger();
         void intializeServices();
         void shutdownServices();
+        void setupImgui();
+        void updateImgui();
 
     protected:
         virtual void Update(float deltaTime) {};
@@ -26,6 +28,3 @@ namespace Revid
     };
 
 }
-
-extern Revid::Application* CreateApplication();
-

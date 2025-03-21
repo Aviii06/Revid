@@ -1,5 +1,6 @@
 add_subdirectory(glm)
 add_subdirectory(glfw)
+add_subdirectory(imgui)
 add_subdirectory(Vulkan-Headers)
 
 add_library(vendor INTERFACE)

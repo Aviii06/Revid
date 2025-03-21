@@ -2,7 +2,7 @@
 
 int main(int argc, char** argv)
 {
-    auto* app = new Revid::Application("revid");
+    auto* app = new RevidEditor::Application("Revid Editor");
 
     app->Run();
 

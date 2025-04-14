@@ -1,12 +1,14 @@
 #pragma once
 #define GLFW_INCLUDE_VULKAN
 #include <revid_engine/renderer/Renderer.h>
+#include <revid_engine/renderer/vulkan/VulkanMacros.h>
 #include <vulkan/vulkan.h>
 
 #include "Mesh.h"
 #include "Vertex.h"
 #include "types/SmartPointers.h"
 #include <optional>
+#include <backends/imgui_impl_vulkan.h>
 
 #define MAX_MESHES_ALLOWED 1000
 
@@ -33,6 +35,16 @@ namespace Revid
         Vector<VkPresentModeKHR> presentModes;
     };
 
+    static void check_vk_result(VkResult err)
+    {
+        if (err == VK_SUCCESS)
+            return;
+        fprintf(stderr, "[vulkan] Error: VkResult = %d\n", err);
+        if (err < 0)
+            abort();
+    }
+
+
     class VulkanRenderer : public Renderer
     {
     public:
@@ -44,6 +56,29 @@ namespace Revid
         void UpdateObj(String path) override;
         void AddMeshToScene(Ref<Mesh> mesh);
         VkDevice GetDeivce() const { return m_device; }
+        ImGui_ImplVulkan_InitInfo GetInitInfo() const
+        {
+            ImGui_ImplVulkan_InitInfo init_info;
+            init_info.Instance = m_instance;
+            init_info.PhysicalDevice = m_physicalDevice;
+            init_info.Device = m_device;
+            init_info.QueueFamily = findQueueFamilies(m_physicalDevice).graphicsFamily.value();
+            init_info.Queue = m_graphicsQueue;
+            init_info.PipelineCache = VK_NULL_HANDLE;
+            init_info.DescriptorPool = m_imguiDescriptorPool;
+            init_info.DescriptorPoolSize = 0;
+            init_info.MinImageCount = 3;
+            init_info.ImageCount = 3;
+            init_info.MSAASamples = VK_SAMPLE_COUNT_1_BIT;
+            init_info.Allocator = nullptr;
+            init_info.CheckVkResultFn = check_vk_result;
+            init_info.Subpass = 0;
+            init_info.RenderPass = m_imGuiRenderPass;
+
+            return init_info;
+        }
+
+        void CreateImguiDescriptorPool();
 
     private:
         void createInstance();
@@ -55,6 +90,7 @@ namespace Revid
         void createGbufferImages();
         void createImageViews();
         void createRenderPass();
+        void createImguiRenderPass();
         void createDescriptorSetLayout();
         void createGbufferPipeline();
         void createLightingPipeline();
@@ -68,12 +104,15 @@ namespace Revid
         void createLightingDescriptorPool();
         void createLightingDescriptorSets();
         void createDescriptorSetsForMeshes();
-        void createCommandBuffer();
+        void createCommandBuffers();
         void createSyncObjects();
         void recreateSwapChain();
         void cleanupSwapChain();
 
     private:
+        void immediateSubmit(std::function<void(VkCommandBuffer cmd)>&& function);
+        VkCommandBuffer beginSingleTimeCommands();
+        void endSingleTimeCommands(VkCommandBuffer commandBuffer);
         bool checkValidationLayers();
 
         static VKAPI_ATTR VkBool32 VKAPI_CALL debugCallback(
@@ -97,7 +136,7 @@ namespace Revid
         bool isDeviceSuitable(VkPhysicalDevice device);
         bool checkDeviceExtensionSupport(VkPhysicalDevice device);
 
-        QueueFamilyIndices findQueueFamilies(VkPhysicalDevice device);
+        QueueFamilyIndices findQueueFamilies(VkPhysicalDevice device) const;
 
         SwapChainSupportDetails querySwapChainSupport(VkPhysicalDevice device);
         VkSurfaceFormatKHR chooseSwapSurfaceFormat(const std::vector<VkSurfaceFormatKHR>& availableFormats);
@@ -106,6 +145,7 @@ namespace Revid
 
         VkShaderModule createShaderModule(const std::vector<char>& code);
         void recordCommandBuffer(const VkCommandBuffer& commandBuffer, uint32_t imageIndex);
+        void recordImguiCommandBuffer(const VkCommandBuffer& commandBuffer, uint32_t imageIndex);
         VkFormat findSupportedFormat(const std::vector<VkFormat>& candidates, VkImageTiling tiling, VkFormatFeatureFlags features);
         VkFormat findDepthFormat();
 
@@ -178,6 +218,7 @@ namespace Revid
         VkPipelineLayout m_lightingPipelineLayout;
 
         VkRenderPass m_renderPass;
+        VkRenderPass m_imGuiRenderPass;
 
         const Vector<const char*> m_validationLayers = {
             "VK_LAYER_KHRONOS_validation"
@@ -214,6 +255,8 @@ namespace Revid
         Vector<Vector<VkDescriptorSet>> m_gbufferDescriptorSets;
         VkDescriptorPool m_lightingDescriptorPool;
         Vector<VkDescriptorSet> m_lightingDescriptorSets;
+
+        VkDescriptorPool m_imguiDescriptorPool;
 
         Vector<SimpleVertex> m_vertices = {
             {{-1.0f, -1.0f, 1.0f}, {1.0f, 0.0f, 0.0f}},
@@ -263,5 +306,14 @@ namespace Revid
 		};
 
         Vector<Ref<Mesh>> m_meshes;
+
+        VkFence m_imGuiFence;
+        Vector<VkCommandBuffer> m_imGuiCommandBuffers;
+        VkCommandPool m_imGuiCommandPool;
+
+        Vector<VkFramebuffer> m_sceneFrameBuffers;
+        Vector<VkImage> m_sceneImages;
+        Vector<VkImageView> m_sceneImageViews;
+        Vector<VkDeviceMemory> m_sceneImageMemories;
     };
 }

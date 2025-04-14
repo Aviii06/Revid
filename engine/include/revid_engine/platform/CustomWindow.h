@@ -24,6 +24,8 @@ namespace Revid
         bool IsKeyPressed(int key) override;
         bool IsMouseButtonPressed(int button) override;
         Maths::Vec2 GetMousePos() override;
+
+        GLFWwindow* GetGLFWWindow() { return m_window; }
     };
 }
 

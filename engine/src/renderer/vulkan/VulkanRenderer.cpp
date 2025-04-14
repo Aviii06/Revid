@@ -24,6 +24,7 @@ void Revid::VulkanRenderer::Init(const RendererSettings& rendererSettings)
 	Logger::Log(LogLevel::INFO, "Creating Vulkan Renderer");
     m_rendererSettings = rendererSettings;
 	m_commandBuffers.resize(m_rendererSettings.MAX_FRAMES_IN_FLIGHT);
+	m_imGuiCommandBuffers.resize(m_rendererSettings.MAX_FRAMES_IN_FLIGHT);
 	m_imageAvailableSemaphores.resize(m_rendererSettings.MAX_FRAMES_IN_FLIGHT);
 	m_renderFinishedSemaphores.resize(m_rendererSettings.MAX_FRAMES_IN_FLIGHT);
 	m_inFlightFences.resize(m_rendererSettings.MAX_FRAMES_IN_FLIGHT);
@@ -42,6 +43,7 @@ void Revid::VulkanRenderer::Init(const RendererSettings& rendererSettings)
 	createGbufferImages();
 	createImageViews();
 	createRenderPass();
+	createImguiRenderPass();
 	createDescriptorSetLayout();
 	createGbufferPipeline();
 	createLightingPipeline();
@@ -52,7 +54,7 @@ void Revid::VulkanRenderer::Init(const RendererSettings& rendererSettings)
 	createIndexBuffer();
 	createLightingDescriptorPool();
 	createLightingDescriptorSets();
-	createCommandBuffer();
+	createCommandBuffers();
 	createSyncObjects();
 }
 
@@ -72,11 +74,15 @@ void Revid::VulkanRenderer::Render()
 	{
 		throw RevidRuntimeException("failed to acquire swap chain image!");
 	}
-
 	vkResetFences(m_device, 1, &m_inFlightFences[m_currentFrame]);
 
 	vkResetCommandBuffer(m_commandBuffers[m_currentFrame], 0);
-	recordCommandBuffer(m_commandBuffers[m_currentFrame], imageIndex);
+	vkResetCommandBuffer(m_imGuiCommandBuffers[m_currentFrame], 0);
+
+	// recordCommandBuffer(m_commandBuffers[m_currentFrame], imageIndex);
+	recordImguiCommandBuffer(m_commandBuffers[m_currentFrame], imageIndex);
+
+	Vector<VkCommandBuffer> submitCommandBuffers = {m_commandBuffers[m_currentFrame]};
 
 	VkSubmitInfo submitInfo{};
 	submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
@@ -87,8 +93,8 @@ void Revid::VulkanRenderer::Render()
 	submitInfo.pWaitSemaphores = waitSemaphores;
 	submitInfo.pWaitDstStageMask = waitStages;
 
-	submitInfo.commandBufferCount = 1;
-	submitInfo.pCommandBuffers = &m_commandBuffers[m_currentFrame];
+	submitInfo.commandBufferCount = static_cast<uint32_t>(submitCommandBuffers.size());
+	submitInfo.pCommandBuffers = submitCommandBuffers.data();
 
 	VkSemaphore signalSemaphores[] = {m_renderFinishedSemaphores[m_currentFrame]};
 	submitInfo.signalSemaphoreCount = 1;
@@ -290,6 +296,40 @@ void Revid::VulkanRenderer::Shutdown()
 	vkDestroySwapchainKHR(m_device, m_swapChain, nullptr);
     vkDestroySurfaceKHR(m_instance, m_surface, nullptr);
     vkDestroyInstance(m_instance, nullptr);
+}
+
+void Revid::VulkanRenderer::CreateImguiDescriptorPool()
+{
+	VkDescriptorPoolSize pool_sizes[] =
+{
+		{ VK_DESCRIPTOR_TYPE_SAMPLER, 1000 },
+		{ VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1000 },
+		{ VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, 1000 },
+		{ VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, 1000 },
+		{ VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER, 1000 },
+		{ VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER, 1000 },
+		{ VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1000 },
+		{ VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1000 },
+		{ VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, 1000 },
+		{ VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC, 1000 },
+		{ VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, 1000 }
+};
+
+	VkDescriptorPoolCreateInfo pool_info = {};
+	pool_info.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
+	pool_info.flags = VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT;
+	pool_info.maxSets = 1000;
+	pool_info.poolSizeCount = std::size(pool_sizes);
+	pool_info.pPoolSizes = pool_sizes;
+
+	if (vkCreateDescriptorPool(m_device, &pool_info, nullptr, &m_imguiDescriptorPool) != VK_SUCCESS)
+	{
+		throw RevidRuntimeException("Failed to create imgui descriptor pool");
+	}
+
+	// immediateSubmit([&](VkCommandBuffer cmd) {
+	// 	ImGui_ImplVulkan_CreateFontsTexture(cmd);
+	// });
 }
 
 void Revid::VulkanRenderer::createInstance()
@@ -521,11 +561,13 @@ void Revid::VulkanRenderer::createGbufferImages()
 	m_positionImages.resize(m_swapChainImages.size());
 	m_normalImages.resize(m_swapChainImages.size());
 	m_colorImages.resize(m_swapChainImages.size());
+	m_sceneImages.resize(m_swapChainImages.size());
 
 	m_depthImageMemories.resize(m_swapChainImages.size());
 	m_positionImageMemories.resize(m_swapChainImages.size());
 	m_normalImageMemories.resize(m_swapChainImages.size());
 	m_colorImageMemories.resize(m_swapChainImages.size());
+	m_sceneImageMemories.resize(m_swapChainImages.size());
 
 	for (size_t i = 0; i < m_swapChainImages.size(); i++)
 	{
@@ -568,6 +610,16 @@ void Revid::VulkanRenderer::createGbufferImages()
 			VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
 			m_colorImages[i],
 			m_colorImageMemories[i]);
+
+		createImage(
+			m_device,
+			m_swapChainExtent.width,
+			m_swapChainExtent.height,
+			VK_FORMAT_R8G8B8A8_UNORM, // 8-bit normalized format for color
+			VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT,
+			VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
+			m_sceneImages[i],
+			m_sceneImageMemories[i]);
 	}
 }
 
@@ -579,6 +631,7 @@ void Revid::VulkanRenderer::createImageViews()
 	m_positionImageViews.resize(m_swapChainImages.size());
 	m_colorImageViews.resize(m_swapChainImages.size());
 	m_normalImageViews.resize(m_swapChainImages.size());
+	m_sceneImageViews.resize(m_swapChainImages.size());
 
 	for (size_t i = 0; i < m_swapChainImages.size(); i++)
 	{
@@ -607,6 +660,12 @@ void Revid::VulkanRenderer::createImageViews()
 			VK_IMAGE_ASPECT_COLOR_BIT);
 
 		m_colorImageViews[i] = createImageView(
+			m_device,
+			m_colorImages[i],
+			VK_FORMAT_R8G8B8A8_UNORM,
+			VK_IMAGE_ASPECT_COLOR_BIT);
+
+		m_sceneImageViews[i] = createImageView(
 			m_device,
 			m_colorImages[i],
 			VK_FORMAT_R8G8B8A8_UNORM,
@@ -723,6 +782,48 @@ void Revid::VulkanRenderer::createRenderPass()
 	if (vkCreateRenderPass(m_device, &renderPassInfo, nullptr, &m_renderPass) != VK_SUCCESS)
 	{
 		throw RevidRuntimeException("failed to create render pass!");
+	}
+}
+
+void Revid::VulkanRenderer::createImguiRenderPass()
+{
+	VkAttachmentDescription attachment = {};
+	attachment.format = m_swapChainImageFormat;
+	attachment.samples = VK_SAMPLE_COUNT_1_BIT;
+	attachment.loadOp = VK_ATTACHMENT_LOAD_OP_LOAD;
+	attachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+	attachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+	attachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+	attachment.initialLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+	attachment.finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
+
+	VkAttachmentReference color_attachment = {};
+	color_attachment.attachment = 0;
+	color_attachment.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+
+	VkSubpassDescription subpass = {};
+	subpass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
+	subpass.colorAttachmentCount = 1;
+	subpass.pColorAttachments = &color_attachment;
+
+	VkSubpassDependency dependency = {};
+	dependency.srcSubpass = VK_SUBPASS_EXTERNAL;
+	dependency.dstSubpass = 0;
+	dependency.srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+	dependency.dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+	dependency.srcAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+	dependency.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_READ_BIT;
+
+	VkRenderPassCreateInfo info = {};
+	info.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
+	info.attachmentCount = 1;
+	info.pAttachments = &attachment;
+	info.subpassCount = 1;
+	info.pSubpasses = &subpass;
+	info.dependencyCount = 1;
+	info.pDependencies = &dependency;
+	if (vkCreateRenderPass(m_device, &info, nullptr, &m_imGuiRenderPass) != VK_SUCCESS) {
+		throw std::runtime_error("Could not create Dear ImGui's render pass");
 	}
 }
 
@@ -1024,6 +1125,28 @@ void Revid::VulkanRenderer::createFramebuffers()
 
 	for (size_t i = 0; i < m_swapChainImageViews.size(); i++)
 	{
+
+		VkImageView attachments[1] = {m_swapChainImageViews[i]};
+
+		VkFramebufferCreateInfo framebufferInfo{};
+		framebufferInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
+		framebufferInfo.renderPass = m_imGuiRenderPass;
+		framebufferInfo.attachmentCount = 1;
+		framebufferInfo.pAttachments = attachments;
+		framebufferInfo.width = m_swapChainExtent.width;
+		framebufferInfo.height = m_swapChainExtent.height;
+		framebufferInfo.layers = 1;
+
+		if (vkCreateFramebuffer(m_device, &framebufferInfo, nullptr, &m_swapChainFramebuffers[i]) != VK_SUCCESS)
+		{
+			throw RevidRuntimeException("failed to create framebuffer!");
+		}
+	}
+
+	m_sceneFrameBuffers.resize(m_swapChainImageViews.size());
+	for (size_t i = 0; i < m_swapChainImageViews.size(); i++)
+	{
+
 		Vector<VkImageView> attachments = {
 			m_positionImageViews[i],
 			m_colorImageViews[i],
@@ -1041,7 +1164,7 @@ void Revid::VulkanRenderer::createFramebuffers()
 		framebufferInfo.height = m_swapChainExtent.height;
 		framebufferInfo.layers = 1;
 
-		if (vkCreateFramebuffer(m_device, &framebufferInfo, nullptr, &m_swapChainFramebuffers[i]) != VK_SUCCESS)
+		if (vkCreateFramebuffer(m_device, &framebufferInfo, nullptr, &m_sceneFrameBuffers[i]) != VK_SUCCESS)
 		{
 			throw RevidRuntimeException("failed to create framebuffer!");
 		}
@@ -1050,20 +1173,37 @@ void Revid::VulkanRenderer::createFramebuffers()
 
 void Revid::VulkanRenderer::createCommandPool()
 {
-	QueueFamilyIndices queueFamilyIndices = findQueueFamilies(m_physicalDevice);
-
-	VkCommandPoolCreateInfo poolInfo{};
-	poolInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
-	poolInfo.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
-	poolInfo.queueFamilyIndex = queueFamilyIndices.graphicsFamily.value();
-
-	if (vkCreateCommandPool(m_device, &poolInfo, nullptr, &m_commandPool) != VK_SUCCESS)
 	{
-		throw RevidRuntimeException("failed to create command pool!");
+		QueueFamilyIndices queueFamilyIndices = findQueueFamilies(m_physicalDevice);
+
+		VkCommandPoolCreateInfo poolInfo{};
+		poolInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
+		poolInfo.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
+		poolInfo.queueFamilyIndex = queueFamilyIndices.graphicsFamily.value();
+
+		if (vkCreateCommandPool(m_device, &poolInfo, nullptr, &m_commandPool) != VK_SUCCESS)
+		{
+			throw RevidRuntimeException("failed to create command pool!");
+		}
+	}
+
+	{
+		QueueFamilyIndices queueFamilyIndices = findQueueFamilies(m_physicalDevice);
+
+		VkCommandPoolCreateInfo poolInfo{};
+		poolInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
+		poolInfo.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
+		poolInfo.queueFamilyIndex = queueFamilyIndices.graphicsFamily.value();
+
+
+		if (vkCreateCommandPool(m_device, &poolInfo, nullptr, &m_imGuiCommandPool) != VK_SUCCESS)
+		{
+			throw RevidRuntimeException("failed to create imgui command pool!");
+		}
 	}
 }
 
-void Revid::VulkanRenderer::createCommandBuffer()
+void Revid::VulkanRenderer::createCommandBuffers()
 {
 	VkCommandBufferAllocateInfo allocInfo{};
 	allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
@@ -1072,6 +1212,15 @@ void Revid::VulkanRenderer::createCommandBuffer()
 	allocInfo.commandBufferCount = m_commandBuffers.size();
 
 	if (vkAllocateCommandBuffers(m_device, &allocInfo, m_commandBuffers.data()) != VK_SUCCESS)
+	{
+		throw RevidRuntimeException("failed to allocate command buffers!");
+	}
+
+	allocInfo.commandPool = m_imGuiCommandPool;
+	allocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
+	allocInfo.commandBufferCount =  m_imGuiCommandBuffers.size();
+
+	if (vkAllocateCommandBuffers(m_device, &allocInfo, m_imGuiCommandBuffers.data()) != VK_SUCCESS)
 	{
 		throw RevidRuntimeException("failed to allocate command buffers!");
 	}
@@ -1285,6 +1434,32 @@ void Revid::VulkanRenderer::createLightingDescriptorPool()
 	if (vkCreateDescriptorPool(m_device, &lightingPoolInfo, nullptr, &m_lightingDescriptorPool) != VK_SUCCESS)
 	{
 		throw std::runtime_error("failed to create lighting descriptor pool!");
+	}
+
+	VkDescriptorPoolSize pool_sizes[] =
+	{
+		{ VK_DESCRIPTOR_TYPE_SAMPLER, 1000 },
+		{ VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1000 },
+		{ VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, 1000 },
+		{ VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, 1000 },
+		{ VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER, 1000 },
+		{ VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER, 1000 },
+		{ VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1000 },
+		{ VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1000 },
+		{ VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, 1000 },
+		{ VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC, 1000 },
+		{ VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, 1000 }
+	};
+	VkDescriptorPoolCreateInfo imguiPoolInfo{};
+	imguiPoolInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
+	imguiPoolInfo.poolSizeCount = 11;
+	imguiPoolInfo.pPoolSizes = pool_sizes;
+	imguiPoolInfo.maxSets = static_cast<uint32_t>(m_rendererSettings.MAX_FRAMES_IN_FLIGHT);
+	imguiPoolInfo.pPoolSizes = pool_sizes;
+
+	if (vkCreateDescriptorPool(m_device, &lightingPoolInfo, nullptr, &m_imguiDescriptorPool) != VK_SUCCESS)
+	{
+		throw std::runtime_error("failed to create imgui descriptor pool!");
 	}
 }
 

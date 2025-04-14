@@ -1,4 +1,5 @@
 #pragma once
+#include <imgui.h>
 #include <types/Containers.h>
 
 namespace RevidEditor
@@ -6,8 +7,10 @@ namespace RevidEditor
     class Application
     {
     private:
-        String m_title;
+        String m_title = "revid";
         bool m_isRunning;
+        ImVec4 m_clearColor;
+        ImGuiIO m_imguiIo;
 
         void initializeLogger();
         void intializeServices();

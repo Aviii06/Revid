@@ -81,7 +81,8 @@ VkExtent2D Revid::VulkanRenderer::chooseSwapExtent(const VkSurfaceCapabilitiesKH
 	return actualExtent;
 }
 
-inline void Revid::VulkanRenderer::createImage(VkDevice device, uint32_t width, uint32_t height, VkFormat format, VkImageUsageFlags usage, VkMemoryPropertyFlags properties, VkImage& image, VkDeviceMemory& imageMemory)
+inline void Revid::VulkanRenderer::createImage(VkDevice device, uint32_t width, uint32_t height, VkFormat format,
+    VkImageUsageFlags usage, VkMemoryPropertyFlags properties, VkImage& image, VkDeviceMemory& imageMemory)
 {
     VkImageCreateInfo imageInfo{};
     imageInfo.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;

@@ -10,6 +10,8 @@
 #include <optional>
 #include <backends/imgui_impl_vulkan.h>
 
+#include "vma/vk_mem_alloc.h"
+
 #define MAX_MESHES_ALLOWED 1000
 
 struct UniformBufferObject {
@@ -72,8 +74,8 @@ namespace Revid
             init_info.MSAASamples = VK_SAMPLE_COUNT_1_BIT;
             init_info.Allocator = nullptr;
             init_info.CheckVkResultFn = check_vk_result;
-            init_info.Subpass = 0;
-            init_info.RenderPass = m_imGuiRenderPass;
+            init_info.Subpass = 1;
+            init_info.RenderPass = m_renderPass;
 
             return init_info;
         }
@@ -150,7 +152,17 @@ namespace Revid
         VkFormat findDepthFormat();
 
     public:
-        void createBuffer(VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties, VkBuffer& buffer, VkDeviceMemory& bufferMemory);
+        void createBuffer(VmaAllocator allocator, VkDeviceSize size, VkBufferUsageFlags usage,
+                          VmaMemoryUsage memoryUsage,
+                          VkBuffer& buffer, VmaAllocation& allocation, void** mappedPtr = nullptr,
+                          VkBufferCreateFlags createFlags = 0);
+        template <typename T>
+        void createGenericBuffer(
+            const std::vector<T>& data,
+            VkBufferUsageFlags usageFlags,
+            VmaMemoryUsage memoryUsage,
+            VkBuffer& buffer,
+            VmaAllocation& allocation);
         uint32_t findMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties);
         void copyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size);
 
@@ -315,5 +327,7 @@ namespace Revid
         Vector<VkImage> m_sceneImages;
         Vector<VkImageView> m_sceneImageViews;
         Vector<VkDeviceMemory> m_sceneImageMemories;
+
+        VmaAllocator m_allocator;
     };
 }

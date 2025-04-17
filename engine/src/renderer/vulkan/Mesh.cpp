@@ -114,42 +114,22 @@ Revid::Mesh::Mesh(String file_name)
 
 void Revid::Mesh::createVertexBuffer()
 {
-	VkDeviceSize bufferSize = sizeof(m_vertices[0]) * m_vertices.size();
-
-	VkBuffer stagingBuffer;
-	VkDeviceMemory stagingBufferMemory;
-	ServiceLocator::GetRenderer()->createBuffer(bufferSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, stagingBuffer, stagingBufferMemory);
-
-	void* data;
-	vkMapMemory(m_device, stagingBufferMemory, 0, bufferSize, 0, &data);
-	memcpy(data, m_vertices.data(), (size_t) bufferSize);
-	vkUnmapMemory(m_device, stagingBufferMemory);
-
-	ServiceLocator::GetRenderer()->createBuffer(bufferSize, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, m_vertexBuffer, m_vertexBufferMemory);
-
-	ServiceLocator::GetRenderer()->copyBuffer(stagingBuffer, m_vertexBuffer, bufferSize);
-
-	vkDestroyBuffer(m_device, stagingBuffer, nullptr);
-	vkFreeMemory(m_device, stagingBufferMemory, nullptr);
+	VmaAllocation vertexAlloc;
+	ServiceLocator::GetRenderer()->createGenericBuffer(
+		m_vertices,
+		VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
+		VMA_MEMORY_USAGE_AUTO_PREFER_DEVICE,
+		m_vertexBuffer,
+		vertexAlloc);
 }
 
 void Revid::Mesh::createIndexBuffer()
 {
-	VkDeviceSize bufferSize = sizeof(m_indices[0]) * m_indices.size() + 1;
-
-	VkBuffer stagingBuffer;
-	VkDeviceMemory stagingBufferMemory;
-	ServiceLocator::GetRenderer()->createBuffer(bufferSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, stagingBuffer, stagingBufferMemory);
-
-	void* data;
-	vkMapMemory(m_device, stagingBufferMemory, 0, bufferSize, 0, &data);
-	memcpy(data, m_indices.data(), (size_t) bufferSize);
-	vkUnmapMemory(m_device, stagingBufferMemory);
-
-	ServiceLocator::GetRenderer()->createBuffer(bufferSize, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, m_indexBuffer, m_indexBufferMemory);
-
-	ServiceLocator::GetRenderer()->copyBuffer(stagingBuffer, m_indexBuffer, bufferSize);
-
-	vkDestroyBuffer(m_device, stagingBuffer, nullptr);
-	vkFreeMemory(m_device, stagingBufferMemory, nullptr);
+	VmaAllocation vertexAlloc;
+	ServiceLocator::GetRenderer()->createGenericBuffer(
+		m_indices,
+		VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT,
+		VMA_MEMORY_USAGE_AUTO_PREFER_DEVICE,
+		m_indexBuffer,
+		vertexAlloc);
 }

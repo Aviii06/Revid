@@ -4,10 +4,11 @@
 #include <revid_engine/renderer/vulkan/utils/VulkanPhysicalDeviceUtils.h>
 #include <revid_engine/renderer/vulkan/utils/VulkanQueuesUtils.h>
 #include <revid_engine/renderer/vulkan/utils/VulkanSwapchainUtils.h>
-#include <revid_engine/renderer/vulkan/utils/VulkanShaderUtils.h>
 #include <revid_engine/renderer/vulkan/utils/VulkanCommandBuffferUtils.h>
 #include <revid_engine/renderer/vulkan/utils/VulkanBufferUtils.h>
 #include <revid_engine/renderer/vulkan/utils/VulkanDepthBuffer.h>
+#include <revid_engine/renderer/vulkan/utils/VulkanShaderUtils.h>
+#include <revid_engine/renderer/vulkan/utils/VulkanAllocation.h>
 
 #include <revid_engine/ServiceLocater.h>
 #include <exceptions/RevidRuntimeException.h>
@@ -18,6 +19,9 @@
 #include <revid_engine/renderer/vulkan/Vertex.h>
 #include <glm/ext/matrix_transform.hpp>
 #include <glm/ext/matrix_clip_space.hpp>
+
+#define VMA_IMPLEMENTATION
+#include "vma/vk_mem_alloc.h"
 
 void Revid::VulkanRenderer::Init(const RendererSettings& rendererSettings)
 {
@@ -44,6 +48,7 @@ void Revid::VulkanRenderer::Init(const RendererSettings& rendererSettings)
 	createImageViews();
 	createRenderPass();
 	createImguiRenderPass();
+	CreateImguiDescriptorPool();
 	createDescriptorSetLayout();
 	createGbufferPipeline();
 	createLightingPipeline();
@@ -60,6 +65,22 @@ void Revid::VulkanRenderer::Init(const RendererSettings& rendererSettings)
 
 void Revid::VulkanRenderer::Render()
 {
+	VmaTotalStatistics stats;
+	vmaCalculateStatistics(m_allocator, &stats);
+
+	vmaCalculateStatistics(m_allocator, &stats);
+
+	printf("========== Vulkan Memory Detailed Stats ==========\n");
+
+	printf("Total Allocations: %", PRIu64 "\n", stats.total.statistics.allocationCount);
+	printf("Total Used Bytes:  %" PRIu64 "\n", stats.total.statistics.blockBytes);
+	printf("Total Alloc Bytes: %" PRIu64 "\n", stats.total.statistics.allocationBytes);
+	printf("Total Unused Ranges: %u\n", stats.total.unusedRangeCount);
+	printf("Min Allocation Size: %" PRIu64 "\n", stats.total.allocationSizeMin);
+	printf("Max Allocation Size: %" PRIu64 "\n", stats.total.allocationSizeMax);
+	printf("Min Unused Range Size: %" PRIu64 "\n", stats.total.unusedRangeSizeMin);
+	printf("Max Unused Range Size: %" PRIu64 "\n", stats.total.unusedRangeSizeMax);
+
 	vkWaitForFences(m_device, 1, &m_inFlightFences[m_currentFrame], VK_TRUE, UINT64_MAX);
 
 	uint32_t imageIndex;
@@ -77,10 +98,10 @@ void Revid::VulkanRenderer::Render()
 	vkResetFences(m_device, 1, &m_inFlightFences[m_currentFrame]);
 
 	vkResetCommandBuffer(m_commandBuffers[m_currentFrame], 0);
-	vkResetCommandBuffer(m_imGuiCommandBuffers[m_currentFrame], 0);
+	// vkResetCommandBuffer(m_imGuiCommandBuffers[m_currentFrame], 0);
 
-	// recordCommandBuffer(m_commandBuffers[m_currentFrame], imageIndex);
-	recordImguiCommandBuffer(m_commandBuffers[m_currentFrame], imageIndex);
+	recordCommandBuffer(m_commandBuffers[m_currentFrame], imageIndex);
+	// recordImguiCommandBuffer(m_commandBuffers[m_currentFrame], imageIndex);
 
 	Vector<VkCommandBuffer> submitCommandBuffers = {m_commandBuffers[m_currentFrame]};
 
@@ -479,10 +500,9 @@ void Revid::VulkanRenderer::createLogicalDevices()
         createInfo.enabledLayerCount = 0;
     }
 
+
     createInfo.enabledExtensionCount = static_cast<uint32_t>(m_deviceExtensions.size());
-    createInfo.ppEnabledExtensionNames = m_deviceExtensions.data();
-
-
+	createInfo.ppEnabledExtensionNames = m_deviceExtensions.data();
 
     if (vkCreateDevice(m_physicalDevice, &createInfo, nullptr, &m_device) != VK_SUCCESS)
     {
@@ -492,6 +512,13 @@ void Revid::VulkanRenderer::createLogicalDevices()
 
     vkGetDeviceQueue(m_device, indices.graphicsFamily.value(), 0, &m_graphicsQueue);
     vkGetDeviceQueue(m_device, indices.presentFamily.value(), 0, &m_presentQueue);
+
+	VmaAllocatorCreateInfo allocatorInfo = {};
+	allocatorInfo.physicalDevice = m_physicalDevice;
+	allocatorInfo.device = m_device;
+	allocatorInfo.instance = m_instance;
+
+	vmaCreateAllocator(&allocatorInfo, &m_allocator);
 }
 
 void Revid::VulkanRenderer::createSwapChain()
@@ -1250,81 +1277,44 @@ void Revid::VulkanRenderer::createSyncObjects()
 
 void Revid::VulkanRenderer::createVertexBuffer()
 {
-	VkDeviceSize bufferSize = sizeof(m_vertices[0]) * m_vertices.size();
-
-	VkBuffer stagingBuffer;
-	VkDeviceMemory stagingBufferMemory;
-	createBuffer(bufferSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, stagingBuffer, stagingBufferMemory);
-
-	void* data;
-	vkMapMemory(m_device, stagingBufferMemory, 0, bufferSize, 0, &data);
-	memcpy(data, m_vertices.data(), (size_t) bufferSize);
-	vkUnmapMemory(m_device, stagingBufferMemory);
-
-	createBuffer(bufferSize, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, m_gbufferVertexBuffer, m_gbufferVertexBufferMemory);
-
-	copyBuffer(stagingBuffer, m_gbufferVertexBuffer, bufferSize);
-
-	vkDestroyBuffer(m_device, stagingBuffer, nullptr);
-	vkFreeMemory(m_device, stagingBufferMemory, nullptr);
-
-
+	// gbuffer
+	VmaAllocation vertexAlloc;
+	createGenericBuffer(
+						m_vertices,
+						VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
+						VMA_MEMORY_USAGE_AUTO_PREFER_DEVICE,
+						m_gbufferVertexBuffer,
+						vertexAlloc);
 
 	// lighting
-
-	bufferSize = sizeof(m_vertices2[0]) *  m_vertices2.size();
-
-	createBuffer(bufferSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, stagingBuffer, stagingBufferMemory);
-
-	vkMapMemory(m_device, stagingBufferMemory, 0, bufferSize, 0, &data);
-	memcpy(data, m_vertices2.data(), (size_t) bufferSize);
-	vkUnmapMemory(m_device, stagingBufferMemory);
-
-	createBuffer(bufferSize, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, m_lightingVertexBuffer, m_lightingVertexBufferMemory);
-
-	copyBuffer(stagingBuffer, m_lightingVertexBuffer, bufferSize);
-
-	vkDestroyBuffer(m_device, stagingBuffer, nullptr);
-	vkFreeMemory(m_device, stagingBufferMemory, nullptr);
+	VmaAllocation vertexAlloc2;
+	createGenericBuffer(
+						m_vertices2,
+						VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
+						VMA_MEMORY_USAGE_AUTO_PREFER_DEVICE,
+						m_lightingVertexBuffer,
+						vertexAlloc2);
 }
 
 void Revid::VulkanRenderer::createIndexBuffer()
 {
-	VkDeviceSize bufferSize = sizeof(m_indices[0]) * m_indices.size();
-
-	VkBuffer stagingBuffer;
-	VkDeviceMemory stagingBufferMemory;
-	createBuffer(bufferSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, stagingBuffer, stagingBufferMemory);
-
-	void* data;
-	vkMapMemory(m_device, stagingBufferMemory, 0, bufferSize, 0, &data);
-	memcpy(data, m_indices.data(), (size_t) bufferSize);
-	vkUnmapMemory(m_device, stagingBufferMemory);
-
-	createBuffer(bufferSize, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, m_gbufferIndexBuffer, m_gbufferIndexBufferMemory);
-
-	copyBuffer(stagingBuffer, m_gbufferIndexBuffer, bufferSize);
-
-	vkDestroyBuffer(m_device, stagingBuffer, nullptr);
-	vkFreeMemory(m_device, stagingBufferMemory, nullptr);
-
+	// gbuffer
+	VmaAllocation indexAlloc;
+	createGenericBuffer(
+						m_vertices,
+						VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT,
+						VMA_MEMORY_USAGE_AUTO_PREFER_DEVICE,
+						m_gbufferIndexBuffer,
+						indexAlloc);
 
 	// lighting
-	bufferSize = sizeof(m_indices2[0]) * m_indices2.size();
-
-	createBuffer(bufferSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, stagingBuffer, stagingBufferMemory);
-
-	void* data2;
-	vkMapMemory(m_device, stagingBufferMemory, 0, bufferSize, 0, &data2);
-	memcpy(data2, m_indices2.data(), (size_t) bufferSize);
-	vkUnmapMemory(m_device, stagingBufferMemory);
-
-	createBuffer(bufferSize, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, m_lightingIndexBuffer, m_lightingIndexBufferMemory);
-
-	copyBuffer(stagingBuffer, m_lightingIndexBuffer, bufferSize);
-
-	vkDestroyBuffer(m_device, stagingBuffer, nullptr);
-	vkFreeMemory(m_device, stagingBufferMemory, nullptr);
+	VmaAllocation indexAlloc2;
+	createGenericBuffer(
+						m_vertices2,
+						VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT,
+						VMA_MEMORY_USAGE_AUTO_PREFER_DEVICE,
+						m_lightingIndexBuffer,
+						indexAlloc2);
 }
 
 void Revid::VulkanRenderer::addUniformBuffers()
@@ -1342,9 +1332,14 @@ void Revid::VulkanRenderer::addUniformBuffers()
 
 	for (size_t i = 0; i < m_rendererSettings.MAX_FRAMES_IN_FLIGHT; i++)
 	{
-		createBuffer(bufferSize, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, m_uniformBuffers[size-1][i], m_uniformBuffersMemory[size-1][i]);
-
-		vkMapMemory(m_device, m_uniformBuffersMemory[size-1][i], 0, bufferSize, 0, &m_uniformBuffersMapped[size-1][i]);
+		VmaAllocation allocation;
+		createBuffer(m_allocator,
+					 bufferSize,
+					 VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
+					 VMA_MEMORY_USAGE_AUTO_PREFER_DEVICE,
+					 m_uniformBuffers[size - 1][i],
+					 allocation,
+					 (void**)&m_uniformBuffersMapped[size - 1][i]);
 	}
 }
 

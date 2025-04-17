@@ -18,6 +18,7 @@ void Revid::CustomWindow::OpenWindow(const WindowData& windowData)
 
     m_extensions = glfwGetRequiredInstanceExtensions(&m_extensionCount);
 
+
     glfwSetWindowUserPointer(m_window, this);
 	glfwSetFramebufferSizeCallback(m_window, framebufferResizeCallback);
 }

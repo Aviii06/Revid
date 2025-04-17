@@ -1,5 +1,6 @@
 #pragma once
 #include "revid_engine/renderer/vulkan/VulkanRenderer.h"
+#include <exceptions/RevidRuntimeException.h>
 
 inline void Revid::VulkanRenderer::recordCommandBuffer(const VkCommandBuffer& commandBuffer, uint32_t imageIndex)
 {
@@ -10,29 +11,6 @@ inline void Revid::VulkanRenderer::recordCommandBuffer(const VkCommandBuffer& co
     {
         throw std::runtime_error("failed to begin recording command buffer!");
     }
-
-	// // Transition swapchain image to COLOR_ATTACHMENT_OPTIMAL for the main render pass
-	// VkImageMemoryBarrier barrier{};
-	// barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
-	// barrier.oldLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
-	// barrier.newLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
-	// barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-	// barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-	// barrier.image = m_sceneImages[imageIndex];
-	// barrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-	// barrier.subresourceRange.baseMipLevel = 0;
-	// barrier.subresourceRange.levelCount = 1;
-	// barrier.subresourceRange.baseArrayLayer = 0;
-	// barrier.subresourceRange.layerCount = 1;
-	// barrier.srcAccessMask = VK_ACCESS_NONE;
-	// barrier.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
-	//
-	// vkCmdPipelineBarrier(
-	// 	commandBuffer,
-	// 	VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
-	// 	VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
-	// 	0, 0, nullptr, 0, nullptr, 1, &barrier
-	// );
 
     VkRenderPassBeginInfo renderPassInfo{};
     renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
@@ -105,6 +83,8 @@ inline void Revid::VulkanRenderer::recordCommandBuffer(const VkCommandBuffer& co
     vkCmdBindIndexBuffer(commandBuffer, m_lightingIndexBuffer, 0, VK_INDEX_TYPE_UINT16);
     vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_lightingPipelineLayout, 0, 1, &m_lightingDescriptorSets[m_currentFrame], 0, nullptr);
     vkCmdDrawIndexed(commandBuffer, static_cast<uint32_t>(m_indices2.size()), 1, 0, 0, 0);
+
+	ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), commandBuffer);
 
     vkCmdEndRenderPass(commandBuffer);
 

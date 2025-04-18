@@ -7,6 +7,7 @@
 #include "Vertex.h"
 #include "types/SmartPointers.h"
 #include <optional>
+#include <backends/imgui_impl_vulkan.h>
 
 #define MAX_MESHES_ALLOWED 1000
 
@@ -33,6 +34,15 @@ namespace Revid
         Vector<VkPresentModeKHR> presentModes;
     };
 
+    static void check_vk_result(VkResult err)
+    {
+        if (err == VK_SUCCESS)
+            return;
+        fprintf(stderr, "[vulkan] Error: VkResult = %d\n", err);
+        if (err < 0)
+            abort();
+    }
+
     class VulkanRenderer : public Renderer
     {
     public:
@@ -44,6 +54,29 @@ namespace Revid
         void UpdateObj(String path) override;
         void AddMeshToScene(Ref<Mesh> mesh);
         VkDevice GetDeivce() const { return m_device; }
+
+        ImGui_ImplVulkan_InitInfo GetInitInfo() const
+        {
+            ImGui_ImplVulkan_InitInfo init_info = {};
+            init_info.Instance = m_instance;
+            init_info.PhysicalDevice = m_physicalDevice;
+            init_info.Device = m_device;
+            init_info.QueueFamily = findQueueFamilies(m_physicalDevice).graphicsFamily.value();
+            init_info.Queue = m_graphicsQueue;
+            init_info.PipelineCache = VK_NULL_HANDLE;
+            init_info.DescriptorPool = m_imguiDescriptorPool;
+            init_info.MinImageCount = 3;
+            init_info.ImageCount = 3;
+            init_info.MSAASamples = VK_SAMPLE_COUNT_1_BIT;
+            init_info.Allocator = nullptr;
+            init_info.CheckVkResultFn = check_vk_result;
+            init_info.Subpass = 1;
+            init_info.RenderPass = m_renderPass;
+
+            return init_info;
+        }
+        void CreateImguiDescriptorPool();
+
 
     private:
         void createInstance();
@@ -97,7 +130,7 @@ namespace Revid
         bool isDeviceSuitable(VkPhysicalDevice device);
         bool checkDeviceExtensionSupport(VkPhysicalDevice device);
 
-        QueueFamilyIndices findQueueFamilies(VkPhysicalDevice device);
+        QueueFamilyIndices findQueueFamilies(VkPhysicalDevice device) const;
 
         SwapChainSupportDetails querySwapChainSupport(VkPhysicalDevice device);
         VkSurfaceFormatKHR chooseSwapSurfaceFormat(const std::vector<VkSurfaceFormatKHR>& availableFormats);
@@ -263,5 +296,7 @@ namespace Revid
 		};
 
         Vector<Ref<Mesh>> m_meshes;
+
+        VkDescriptorPool m_imguiDescriptorPool;
     };
 }

@@ -1,7 +1,7 @@
 #pragma once
 #include "revid_engine/renderer/vulkan/VulkanRenderer.h"
 
-Revid::QueueFamilyIndices Revid::VulkanRenderer::findQueueFamilies(VkPhysicalDevice device)
+Revid::QueueFamilyIndices Revid::VulkanRenderer::findQueueFamilies(VkPhysicalDevice device) const
 {
     QueueFamilyIndices indices;
 

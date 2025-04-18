@@ -15,6 +15,7 @@ namespace Revid
         static void framebufferResizeCallback(GLFWwindow* window, int width, int height);
 
     public:
+        GLFWwindow* GetGLFWWindow() const { return m_window; }
         CustomWindow() = default;
         void OpenWindow(const WindowData&) override;
         bool Update() override;

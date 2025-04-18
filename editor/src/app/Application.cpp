@@ -18,7 +18,6 @@ RevidEditor::Application::Application(String title)
     Revid::Logger::Log(Revid::LogLevel::INFO, "Initialising Revid Application named: " + title);
     initializeLogger();
     intializeServices();
-
 }
 
 RevidEditor::Application::~Application()
@@ -39,6 +38,7 @@ void RevidEditor::Application::Run()
         Update(0.01f);
 
     	Revid::ServiceLocator::GetInputHandler()->HandleInput();
+		updateImgui();
 
         Revid::ServiceLocator::GetRenderer()->Render();
     }

@@ -1,5 +1,5 @@
 #pragma once
-#include "renderer/vulkan/VulkanRenderer.h"
+#include "revid_engine/renderer/vulkan/VulkanRenderer.h"
 
 inline void Revid::VulkanRenderer::recordCommandBuffer(const VkCommandBuffer& commandBuffer, uint32_t imageIndex)
 {
@@ -18,14 +18,17 @@ inline void Revid::VulkanRenderer::recordCommandBuffer(const VkCommandBuffer& co
     renderPassInfo.renderArea.offset = {0, 0};
     renderPassInfo.renderArea.extent = m_swapChainExtent;
 
-    VkClearValue clearValues[4] = {
+    Vector<VkClearValue> clearValues = {
         { {0.0f, 0.0f, 0.0f, 1.0f} }, // Position
         { {0.0f, 0.0f, 0.0f, 1.0f} }, // Color
         { {0.0f, 0.0f, 0.0f, 1.0f} }, // Normal
+        {}, // Depth
         { {0.0f, 0.0f, 0.0f, 1.0f} }  // Swapchain
     };
-    renderPassInfo.clearValueCount = 4;
-    renderPassInfo.pClearValues = clearValues;
+
+    clearValues[3].depthStencil = {1.0f, 0};
+    renderPassInfo.clearValueCount = static_cast<uint32_t>(clearValues.size());
+    renderPassInfo.pClearValues = clearValues.data();
 
     vkCmdBeginRenderPass(commandBuffer, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
 
@@ -46,16 +49,27 @@ inline void Revid::VulkanRenderer::recordCommandBuffer(const VkCommandBuffer& co
     scissor.extent = m_swapChainExtent;
     vkCmdSetScissor(commandBuffer, 0, 1, &scissor);
 
-    VkBuffer vertexBuffers[] = {m_gbufferVertexBuffer};
-    VkDeviceSize offsets[] = {0};
-    vkCmdBindVertexBuffers(commandBuffer, 0, 1, vertexBuffers, offsets);
-    vkCmdBindIndexBuffer(commandBuffer, m_gbufferIndexBuffer, 0, VK_INDEX_TYPE_UINT16);
+    Vector<VkBuffer> vertexBuffers;
+    Vector<VkDeviceSize> indexOffsets; // Offsets for each index buffer (if different offsets are required)
+    vertexBuffers.reserve(MAX_MESHES_ALLOWED);
+    indexOffsets.reserve(MAX_MESHES_ALLOWED);
 
-    // vkCmdDraw(commandBuffer, static_cast<uint32_t>(m_vertices.size()), 1, 0, 0);
-    vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_gbufferPipelineLayout, 0, 1, &m_gbufferDescriptorSets[m_currentFrame], 0, nullptr);
-    vkCmdDrawIndexed(commandBuffer, static_cast<uint32_t>(m_indices.size()), 1000, 0, 0, 0);
+    for (auto mesh : m_meshes)
+    {
+        vertexBuffers.push_back(mesh->GetVertexBuffer());
+        indexOffsets.push_back(0);
+    }
 
-    // vkCmdDraw(commandBuffer, 3, 1, 0, 0);
+    for (size_t i = 0; i < m_meshes.size(); i++)
+	{
+        updateUniformBuffer(m_currentFrame, i);
+		vkCmdBindVertexBuffers(commandBuffer, 0, 1, &vertexBuffers[i], &indexOffsets[i]);
+		vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_gbufferPipelineLayout, 0, 1, &m_gbufferDescriptorSets[i][m_currentFrame], 0, nullptr);
+        VkBuffer indexBuffer = m_meshes[i]->GetIndexBuffer();
+        int indexCount = m_meshes[i]->GetIndicesSize();
+		vkCmdBindIndexBuffer(commandBuffer, indexBuffer, indexOffsets[i], VK_INDEX_TYPE_UINT16);
+		vkCmdDrawIndexed(commandBuffer, static_cast<uint32_t>(indexCount), m_meshes[i]->GetInstanceCount(), 0, 0, 0);
+	}
 
     vkCmdNextSubpass(commandBuffer, VK_SUBPASS_CONTENTS_INLINE);
 
@@ -68,6 +82,8 @@ inline void Revid::VulkanRenderer::recordCommandBuffer(const VkCommandBuffer& co
     vkCmdBindIndexBuffer(commandBuffer, m_lightingIndexBuffer, 0, VK_INDEX_TYPE_UINT16);
     vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_lightingPipelineLayout, 0, 1, &m_lightingDescriptorSets[m_currentFrame], 0, nullptr);
     vkCmdDrawIndexed(commandBuffer, static_cast<uint32_t>(m_indices2.size()), 1, 0, 0, 0);
+
+    ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), commandBuffer);
 
     vkCmdEndRenderPass(commandBuffer);
 

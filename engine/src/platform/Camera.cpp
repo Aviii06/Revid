@@ -1,5 +1,5 @@
-#include "Camera.h"
-#include "maths/VecHelper.h"
+#include <revid_engine/platform/Camera.h>
+#include <maths/VecHelper.h>
 #include <glm/glm.hpp>
 #include <glm/ext/matrix_transform.hpp>
 #include <glm/ext/matrix_clip_space.hpp>
@@ -24,7 +24,7 @@ namespace Revid
 	}
 
 	// Process mouse movement
-	void EditorCamera::ProcessMouseMovement(float xOffset, float yOffset, bool constrainPitch)
+	void EditorCamera::ProcessMouseMovement(double xOffset, double yOffset, bool constrainPitch)
 	{
 		xOffset *= m_MouseSensitivity;
 		yOffset *= m_MouseSensitivity;
@@ -69,7 +69,7 @@ namespace Revid
 		m_Front = Maths::Normalize(front);
 		// Also re-calculate the Right and Up vector
 		// Normalize the vectors, because their length gets closer to 0 the more you look up or down which results in slower movement.
-		m_Right = Maths::Normalize(Maths::Cross(m_Front, Maths::Vec3(0.0f, 1.0f, 0.0f)));
+		m_Right = Maths::Normalize(Maths::Cross(m_Front, m_Up));
 		m_Up = Maths::Normalize(Maths::Cross(m_Right, m_Front));
 	}
 
@@ -122,6 +122,18 @@ namespace Revid
 	void EditorCamera::MoveRight()
 	{
 		m_Position += m_Right * m_MovementSpeed;
+		updateViewMatrix();
+	}
+
+	void EditorCamera::MoveUp()
+	{
+		m_Position += m_Up * m_MovementSpeed;
+		updateViewMatrix();
+	}
+
+	void EditorCamera::MoveDown()
+	{
+		m_Position -= m_Up * m_MovementSpeed;
 		updateViewMatrix();
 	}
 }

@@ -10,3 +10,6 @@
 [submodule "vendor/vk-bootstrap"]
 	path = vendor/vk-bootstrap
 	url = https://github.com/charles-lunarg/vk-bootstrap.git
+[submodule "vendor/imgui/imgui"]
+	path = vendor/imgui/imgui
+	url = https://github.com/ocornut/imgui.git

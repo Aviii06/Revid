@@ -1,5 +1,6 @@
 #pragma once
 #include <types/Containers.h>
+#include <cstdint>
 
 namespace Revid
 {

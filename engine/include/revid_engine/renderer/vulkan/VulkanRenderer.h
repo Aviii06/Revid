@@ -2,8 +2,14 @@
 #define GLFW_INCLUDE_VULKAN
 #include <revid_engine/renderer/Renderer.h>
 #include <vulkan/vulkan.h>
+
+#include "Mesh.h"
 #include "Vertex.h"
 #include "types/SmartPointers.h"
+#include <optional>
+#include <backends/imgui_impl_vulkan.h>
+
+#define MAX_MESHES_ALLOWED 1000
 
 struct UniformBufferObject {
     glm::mat4 model;
@@ -24,9 +30,18 @@ namespace Revid
 
     struct SwapChainSupportDetails {
         VkSurfaceCapabilitiesKHR capabilities;
-        std::vector<VkSurfaceFormatKHR> formats;
-        std::vector<VkPresentModeKHR> presentModes;
+        Vector<VkSurfaceFormatKHR> formats;
+        Vector<VkPresentModeKHR> presentModes;
     };
+
+    static void check_vk_result(VkResult err)
+    {
+        if (err == VK_SUCCESS)
+            return;
+        fprintf(stderr, "[vulkan] Error: VkResult = %d\n", err);
+        if (err < 0)
+            abort();
+    }
 
     class VulkanRenderer : public Renderer
     {
@@ -37,6 +52,31 @@ namespace Revid
         void UpdateVertices(Vector<SimpleVertex>) override;
         void UpdateIndices(Vector<uint16_t>) override;
         void UpdateObj(String path) override;
+        void AddMeshToScene(Ref<Mesh> mesh);
+        VkDevice GetDeivce() const { return m_device; }
+
+        ImGui_ImplVulkan_InitInfo GetInitInfo() const
+        {
+            ImGui_ImplVulkan_InitInfo init_info = {};
+            init_info.Instance = m_instance;
+            init_info.PhysicalDevice = m_physicalDevice;
+            init_info.Device = m_device;
+            init_info.QueueFamily = findQueueFamilies(m_physicalDevice).graphicsFamily.value();
+            init_info.Queue = m_graphicsQueue;
+            init_info.PipelineCache = VK_NULL_HANDLE;
+            init_info.DescriptorPool = m_imguiDescriptorPool;
+            init_info.MinImageCount = 3;
+            init_info.ImageCount = 3;
+            init_info.MSAASamples = VK_SAMPLE_COUNT_1_BIT;
+            init_info.Allocator = nullptr;
+            init_info.CheckVkResultFn = check_vk_result;
+            init_info.Subpass = 1;
+            init_info.RenderPass = m_renderPass;
+
+            return init_info;
+        }
+        void CreateImguiDescriptorPool();
+
 
     private:
         void createInstance();
@@ -55,9 +95,12 @@ namespace Revid
         void createCommandPool();
         void createVertexBuffer();
         void createIndexBuffer();
-        void createUniformBuffers();
-        void createDescriptorPool();
-        void createDescriptorSets();
+        void addUniformBuffers();
+        void updateGbufferDescriptorPool();
+        void addGbufferDescriptorSets();
+        void createLightingDescriptorPool();
+        void createLightingDescriptorSets();
+        void createDescriptorSetsForMeshes();
         void createCommandBuffer();
         void createSyncObjects();
         void recreateSwapChain();
@@ -87,7 +130,7 @@ namespace Revid
         bool isDeviceSuitable(VkPhysicalDevice device);
         bool checkDeviceExtensionSupport(VkPhysicalDevice device);
 
-        QueueFamilyIndices findQueueFamilies(VkPhysicalDevice device);
+        QueueFamilyIndices findQueueFamilies(VkPhysicalDevice device) const;
 
         SwapChainSupportDetails querySwapChainSupport(VkPhysicalDevice device);
         VkSurfaceFormatKHR chooseSwapSurfaceFormat(const std::vector<VkSurfaceFormatKHR>& availableFormats);
@@ -96,11 +139,16 @@ namespace Revid
 
         VkShaderModule createShaderModule(const std::vector<char>& code);
         void recordCommandBuffer(const VkCommandBuffer& commandBuffer, uint32_t imageIndex);
+        VkFormat findSupportedFormat(const std::vector<VkFormat>& candidates, VkImageTiling tiling, VkFormatFeatureFlags features);
+        VkFormat findDepthFormat();
 
+    public:
         void createBuffer(VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties, VkBuffer& buffer, VkDeviceMemory& bufferMemory);
         uint32_t findMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties);
         void copyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size);
-        void updateUniformBuffer(uint32_t currentImage);
+
+    private:
+        void updateUniformBuffer(uint32_t currentImage, int mesh_index);
         void createImage(
             VkDevice device,
             uint32_t width,
@@ -132,24 +180,28 @@ namespace Revid
         VkQueue m_presentQueue;
         VkSurfaceKHR m_surface;
 		VkSwapchainKHR m_swapChain;
-        std::vector<VkImage> m_swapChainImages;
-        std::vector<VkImage> m_positionImages;
-        std::vector<VkImage> m_colorImages;
-        std::vector<VkImage> m_normalImages;
+
         VkFormat m_swapChainImageFormat;
         VkExtent2D m_swapChainExtent;
-        VkRenderPass m_renderPass;
 
-        std::vector<VkImageView> m_swapChainImageViews;
-        std::vector<VkImageView> m_positionImageViews;
-        std::vector<VkImageView> m_colorImageViews;
-        std::vector<VkImageView> m_normalImageViews;
+        Vector<VkImage> m_swapChainImages;
+        Vector<VkImage> m_depthImages;
+        Vector<VkImage> m_positionImages;
+        Vector<VkImage> m_colorImages;
+        Vector<VkImage> m_normalImages;
 
-        std::vector<VkDeviceMemory> m_positionImageMemories;
-        std::vector<VkDeviceMemory> m_colorImageMemories;
-        std::vector<VkDeviceMemory> m_normalImageMemories;
+        Vector<VkImageView> m_swapChainImageViews;
+        Vector<VkImageView> m_depthImageViews;
+        Vector<VkImageView> m_positionImageViews;
+        Vector<VkImageView> m_colorImageViews;
+        Vector<VkImageView> m_normalImageViews;
 
-        std::vector<VkFramebuffer> m_swapChainFramebuffers;
+        Vector<VkDeviceMemory> m_depthImageMemories;
+        Vector<VkDeviceMemory> m_positionImageMemories;
+        Vector<VkDeviceMemory> m_colorImageMemories;
+        Vector<VkDeviceMemory> m_normalImageMemories;
+
+        Vector<VkFramebuffer> m_swapChainFramebuffers;
         VkCommandPool m_commandPool;
         Vector<VkCommandBuffer> m_commandBuffers;
         VkPipeline m_gbufferPipeline;
@@ -158,12 +210,13 @@ namespace Revid
         VkPipelineLayout m_gbufferPipelineLayout;
         VkPipelineLayout m_lightingPipelineLayout;
 
+        VkRenderPass m_renderPass;
 
-        const std::vector<const char*> m_validationLayers = {
+        const Vector<const char*> m_validationLayers = {
             "VK_LAYER_KHRONOS_validation"
         };
 
-        const std::vector<const char*> m_deviceExtensions = {
+        const Vector<const char*> m_deviceExtensions = {
             VK_KHR_SWAPCHAIN_EXTENSION_NAME
         };
 
@@ -177,35 +230,29 @@ namespace Revid
         VkBuffer m_gbufferVertexBuffer;
         VkBuffer m_lightingVertexBuffer;
         size_t m_vertexCount;
-        VkDeviceMemory m_gbufferVertexBufferMemory;
-        VkDeviceMemory m_lightingVertexBufferMemory;
+        VkDeviceMemory m_gbufferVertexBufferMemory = VK_NULL_HANDLE;
+        VkDeviceMemory m_lightingVertexBufferMemory = VK_NULL_HANDLE;
         VkDescriptorSetLayout m_gbufferDescriptorSetLayout;
         VkDescriptorSetLayout m_lightingDescriptorSetLayout;
 
         VkBuffer m_gbufferIndexBuffer;
         VkBuffer m_lightingIndexBuffer;
-        VkDeviceMemory m_gbufferIndexBufferMemory;
-        VkDeviceMemory m_lightingIndexBufferMemory;
+        VkDeviceMemory m_gbufferIndexBufferMemory = VK_NULL_HANDLE;
+        VkDeviceMemory m_lightingIndexBufferMemory = VK_NULL_HANDLE;
 
-        std::vector<VkBuffer> m_uniformBuffers;
-        std::vector<VkDeviceMemory> m_uniformBuffersMemory;
-        std::vector<void*> m_uniformBuffersMapped;
+        Vector<Vector<VkBuffer>> m_uniformBuffers;
+        Vector<Vector<VkDeviceMemory>> m_uniformBuffersMemory;
+        Vector<Vector<void*>> m_uniformBuffersMapped;
         VkDescriptorPool m_gbufferDescriptorPool;
-        Vector<VkDescriptorSet> m_gbufferDescriptorSets;
+        Vector<Vector<VkDescriptorSet>> m_gbufferDescriptorSets;
         VkDescriptorPool m_lightingDescriptorPool;
         Vector<VkDescriptorSet> m_lightingDescriptorSets;
 
-
         Vector<SimpleVertex> m_vertices = {
-            {{-0.5f, -0.5f, 0.5f}, {1.0f, 0.0f, 0.0f}},
-          {{0.5f, -0.5f, 0.5f}, {0.0f, 1.0f, 0.0f}},
-          {{0.5f, 0.5f, 0.5f}, {0.0f, 0.0f, 1.0f}},
-          {{-0.5f, 0.5f, 0.5f}, {1.0f, 1.0f, 1.0f}},
-
-            {{-0.5f, -0.5f, -0.5f}, {1.0f, 0.0f, 0.0f}},
-          {{0.5f, -0.5f, -0.5f}, {0.0f, 1.0f, 0.0f}},
-          {{0.5f, 0.5f, -0.5f}, {0.0f, 0.0f, 1.0f}},
-          {{-0.5f, 0.5f, -0.5f}, {1.0f, 1.0f, 1.0f}}
+            {{-1.0f, -1.0f, 1.0f}, {1.0f, 0.0f, 0.0f}},
+            {{1.0f, -1.0f, 1.0f}, {0.0f, 1.0f, 0.0f}},
+            {{1.0f, 1.0f, 1.0f}, {0.0f, 0.0f, 1.0f}},
+            {{-1.0f, 1.0f, 1.0f}, {0.0f, 0.0f, 1.0f}},
         };
 
         Vector<SimpleVertex> m_vertices2 = {
@@ -247,5 +294,9 @@ namespace Revid
             0, 2, 1,
             2, 0, 3
 		};
+
+        Vector<Ref<Mesh>> m_meshes;
+
+        VkDescriptorPool m_imguiDescriptorPool;
     };
 }

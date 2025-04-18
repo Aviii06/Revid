@@ -1,4 +1,4 @@
-#include "CustomWindow.h"
+#include <revid_engine/platform/CustomWindow.h>
 #include <exceptions/RevidRuntimeException.h>
 #include <revid_engine/ServiceLocater.h>
 
@@ -42,6 +42,21 @@ bool Revid::CustomWindow::IsKeyPressed(int key)
 	return state == GLFW_PRESS || state == GLFW_REPEAT;
 }
 
+bool Revid::CustomWindow::IsMouseButtonPressed(int button)
+{
+	int state = glfwGetMouseButton(m_window, button);
+
+	return state == GLFW_PRESS;
+}
+
+Revid::Maths::Vec2 Revid::CustomWindow::GetMousePos()
+{
+	// get curr mouse position x
+	Maths::Vec2 pos;
+	glfwGetCursorPos(m_window, &pos.x, &pos.y);
+
+	return pos;
+}
 
 void Revid::CustomWindow::GetDrawSurface(Map<SurfaceArgs, int*> surfaceArgs)
 {

@@ -4,6 +4,7 @@
 #include <iostream>
 #include <sstream>
 #include <types/Containers.h>
+#include <unordered_map>
 
 namespace Revid
 {
@@ -25,7 +26,7 @@ namespace Revid::Logger
 	#define YELLOW  "\033[33m"      // Warning
 	#define GREEN   "\033[32m"      // Info
 
-	static const std::unordered_map<const LogLevel, std::pair<const std::string, const std::string>> m_debugMap = {
+	static const std::unordered_map<LogLevel, std::pair<std::string, std::string>> m_debugMap = {
 		{ LogLevel::INFO, {GREEN, "INFO"} },
 		{ LogLevel::WARNING, {YELLOW, "WARNING"} },
 		{ LogLevel::ERROR, {RED, "ERROR"} },

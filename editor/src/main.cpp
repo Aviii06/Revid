@@ -1,23 +1,10 @@
-#include <revid_engine/platform/Application.h>
-#include <revid_engine/platform/EntryPoint.h>
+#include "app/Application.h"
 
-class RevidApp : public Revid::Application
+int main(int argc, char** argv)
 {
-public:
-    RevidApp(String title) : Application(std::move(title))
-    {
-        // std::cout << "Intialising Revid Application\n";
-    }
+    auto* app = new RevidEditor::Application("Revid Editor");
 
-protected:
-    void Update(float deltaTime) override
-    {
-        // std::cout << "Updating\n";
-    }
+    app->Run();
 
-};
-
-Revid::Application* CreateApplication()
-{
-    return new RevidApp("RevidApp");
+    delete app;
 }

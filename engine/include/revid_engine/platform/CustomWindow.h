@@ -15,6 +15,7 @@ namespace Revid
         static void framebufferResizeCallback(GLFWwindow* window, int width, int height);
 
     public:
+        GLFWwindow* GetGLFWWindow() const { return m_window; }
         CustomWindow() = default;
         void OpenWindow(const WindowData&) override;
         bool Update() override;
@@ -22,6 +23,8 @@ namespace Revid
         void GetDrawSurface(Map<SurfaceArgs, int*>) override;
         void WaitForEvents() override;
         bool IsKeyPressed(int key) override;
+        bool IsMouseButtonPressed(int button) override;
+        Maths::Vec2 GetMousePos() override;
     };
 }
 

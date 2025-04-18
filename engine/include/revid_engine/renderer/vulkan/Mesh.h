@@ -3,6 +3,7 @@
 
 #include "Vertex.h"
 #include "types/Containers.h"
+#include <types/SmartPointers.h>
 
 namespace Revid
 {
@@ -11,7 +12,7 @@ namespace Revid
 	public:
 		Mesh(String file_name);
 		~Mesh() = default;
-		VkBuffer GetVertexBuffer() { return m_vertexBuffer; }
+		Ref<VkBuffer> GetVertexBuffer() { return MakeRef<VkBuffer>(m_vertexBuffer); }
 		VkBuffer GetIndexBuffer() { return m_indexBuffer; }
 		Vector<SimpleVertex> GetVertices() const { return m_vertices; }
 		Vector<uint16_t> GetIndices() const { return m_indices; }

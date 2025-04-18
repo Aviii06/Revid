@@ -49,25 +49,15 @@ inline void Revid::VulkanRenderer::recordCommandBuffer(const VkCommandBuffer& co
     scissor.extent = m_swapChainExtent;
     vkCmdSetScissor(commandBuffer, 0, 1, &scissor);
 
-    Vector<VkBuffer> vertexBuffers;
-    Vector<VkDeviceSize> indexOffsets; // Offsets for each index buffer (if different offsets are required)
-    vertexBuffers.reserve(MAX_MESHES_ALLOWED);
-    indexOffsets.reserve(MAX_MESHES_ALLOWED);
-
-    for (auto mesh : m_meshes)
-    {
-        vertexBuffers.push_back(mesh->GetVertexBuffer());
-        indexOffsets.push_back(0);
-    }
-
     for (size_t i = 0; i < m_meshes.size(); i++)
 	{
         updateUniformBuffer(m_currentFrame, i);
-		vkCmdBindVertexBuffers(commandBuffer, 0, 1, &vertexBuffers[i], &indexOffsets[i]);
+        VkDeviceSize indexOffset = 0;
+		vkCmdBindVertexBuffers(commandBuffer, 0, 1, m_meshes[i]->GetVertexBuffer().get(), &indexOffset);
 		vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_gbufferPipelineLayout, 0, 1, &m_gbufferDescriptorSets[i][m_currentFrame], 0, nullptr);
         VkBuffer indexBuffer = m_meshes[i]->GetIndexBuffer();
         int indexCount = m_meshes[i]->GetIndicesSize();
-		vkCmdBindIndexBuffer(commandBuffer, indexBuffer, indexOffsets[i], VK_INDEX_TYPE_UINT16);
+		vkCmdBindIndexBuffer(commandBuffer, indexBuffer, 0, VK_INDEX_TYPE_UINT16);
 		vkCmdDrawIndexed(commandBuffer, static_cast<uint32_t>(indexCount), m_meshes[i]->GetInstanceCount(), 0, 0, 0);
 	}
 

@@ -1,21 +1,20 @@
-#include <revid_engine/renderer/vulkan/VulkanRenderer.h>
-#include <revid_engine/renderer/vulkan/utils/VulkanValidationUtils.h>
-#include <revid_engine/renderer/vulkan/utils/VulkanDebugUtils.h>
-#include <revid_engine/renderer/vulkan/utils/VulkanPhysicalDeviceUtils.h>
-#include <revid_engine/renderer/vulkan/utils/VulkanQueuesUtils.h>
-#include <revid_engine/renderer/vulkan/utils/VulkanSwapchainUtils.h>
-#include <revid_engine/renderer/vulkan/utils/VulkanShaderUtils.h>
-#include <revid_engine/renderer/vulkan/utils/VulkanCommandBuffferUtils.h>
-#include <revid_engine/renderer/vulkan/utils/VulkanBufferUtils.h>
-#include <revid_engine/renderer/vulkan/utils/VulkanDepthBuffer.h>
-
+#include <revid_engine/core/renderer/VulkanRenderer.h>
+#include <revid_engine/core/renderer/utils/VulkanValidationUtils.h>
+#include <revid_engine/core/renderer/utils/VulkanDebugUtils.h>
+#include <revid_engine/core/renderer/utils/VulkanPhysicalDeviceUtils.h>
+#include <revid_engine/core/renderer/utils/VulkanQueuesUtils.h>
+#include <revid_engine/core/renderer/utils/VulkanSwapchainUtils.h>
+#include <revid_engine/core/renderer/utils/VulkanShaderUtils.h>
+#include <revid_engine/core/renderer/utils/VulkanCommandBuffferUtils.h>
+#include <revid_engine/core/renderer/utils/VulkanBufferUtils.h>
+#include <revid_engine/core/renderer/utils/VulkanDepthBuffer.h>
+#include <revid_engine/core/renderer/Vertex.h>
 #include <revid_engine/ServiceLocater.h>
-#include <exceptions/RevidRuntimeException.h>
 
+#include <exceptions/RevidRuntimeException.h>
 #include <logging/Logging.h>
 #include <utils/FileHandler.h>
 
-#include <revid_engine/renderer/vulkan/Vertex.h>
 #include <glm/ext/matrix_transform.hpp>
 #include <glm/ext/matrix_clip_space.hpp>
 

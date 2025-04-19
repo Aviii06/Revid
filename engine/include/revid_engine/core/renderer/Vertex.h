@@ -1,9 +1,9 @@
 #pragma once
 #include <vulkan/vulkan.h>
-
-#include "maths/Vec.h"
-#include "revid_engine/renderer/vulkan/utils/VertexUtils.h"
+#include <maths/Vec.h>
 #include <array>
+
+#include <revid_engine/core/renderer/utils/VertexUtils.h>
 
 namespace Revid
 {

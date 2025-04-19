@@ -1,7 +1,7 @@
-#include "../../include/revid_engine/platform/InputHandler.h"
+#include <revid_engine/input/InputHandler.h>
+#include <revid_engine/ServiceLocater.h>
 
-#include "../../../vendor/glfw/include/GLFW/glfw3.h"
-#include "../../include/revid_engine/ServiceLocater.h"
+#include <GLFW/glfw3.h>
 
 void Revid::InputHandler::HandleInput()
 {

@@ -4,14 +4,7 @@
 
 namespace Revid
 {
-    struct SimpleVertex;
-    struct RendererSettings
-    {
-        uint8_t MAX_FRAMES_IN_FLIGHT;
-        String appName;
-        const char** windowExtentions;
-        uint32_t windowExtentionCount;
-    };
+
 
     class Renderer
     {

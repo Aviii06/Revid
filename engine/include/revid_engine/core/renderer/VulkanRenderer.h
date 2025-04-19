@@ -1,6 +1,5 @@
 #pragma once
 #define GLFW_INCLUDE_VULKAN
-#include <revid_engine/renderer/Renderer.h>
 #include <vulkan/vulkan.h>
 
 #include "Mesh.h"
@@ -19,6 +18,15 @@ struct UniformBufferObject {
 
 namespace Revid
 {
+	struct SimpleVertex;
+    struct RendererSettings
+    {
+        uint8_t MAX_FRAMES_IN_FLIGHT;
+        String appName;
+        const char** windowExtentions;
+        uint32_t windowExtentionCount;
+    };
+
     struct QueueFamilyIndices {
         std::optional<uint32_t> graphicsFamily;
         std::optional<uint32_t> presentFamily;
@@ -43,17 +51,18 @@ namespace Revid
             abort();
     }
 
-    class VulkanRenderer : public Renderer
+    class VulkanRenderer
     {
     public:
-        void Init(const RendererSettings&) override;
-        void Shutdown() override;
-        void Render() override;
-        void UpdateVertices(Vector<SimpleVertex>) override;
-        void UpdateIndices(Vector<uint16_t>) override;
-        void UpdateObj(String path) override;
+        void Init(const RendererSettings&);
+        void Shutdown();
+        void Render();
+        void UpdateVertices(Vector<SimpleVertex>);
+        void UpdateIndices(Vector<uint16_t>);
+        void UpdateObj(String path);
         void AddMeshToScene(Ref<Mesh> mesh);
         VkDevice GetDeivce() const { return m_device; }
+        void FramebufferResized() { m_framebufferResized = true; }
 
         ImGui_ImplVulkan_InitInfo GetInitInfo() const
         {
@@ -165,6 +174,7 @@ namespace Revid
             VkImageAspectFlags aspectFlags);
 
     private:
+        bool m_framebufferResized = false;
 #ifdef NDEBUG
         const bool m_enableValidationLayers = false;
 #else

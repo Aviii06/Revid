@@ -1,12 +1,11 @@
 #pragma once
-#include <types/SmartPointers.h>
-#include "revid_engine/platform/CustomWindow.h"
-#include "revid_engine/renderer/Renderer.h"
-#include "revid_engine/platform/Camera.h"
-#include <logging/Logging.h>
-#include "revid_engine/platform/InputHandler.h"
+#include <revid_engine/window/CustomWindow.h>
+#include <revid_engine/input/Camera.h>
+#include <revid_engine/input/InputHandler.h>
+#include <revid_engine/core/renderer/VulkanRenderer.h>
 
-#include "revid_engine/renderer/vulkan/VulkanRenderer.h"
+#include <logging/Logging.h>
+#include <types/SmartPointers.h>
 
 //TODO: Use a singelton mixin to remove duplication
 namespace Revid

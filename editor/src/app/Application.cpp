@@ -1,9 +1,10 @@
 #include "Application.h"
 #include "revid_engine/ServiceLocater.h"
-#include <revid_engine/platform/CustomWindow.h>
+#include <revid_engine/window/CustomWindow.h>
+#include <revid_engine/core/renderer/VulkanRenderer.h>
+
 #define GLM_ENABLE_EXPERIMENTAL
 #include "glm/gtx/transform.hpp"
-#include "revid_engine/renderer/vulkan/VulkanRenderer.h"
 #include "logging/Logging.h"
 #include "gui/ImguiHelper.h"
 

@@ -1,7 +1,6 @@
 #pragma once
+#include <revid_engine/core/renderer/VulkanRenderer.h>
 #include <exceptions/RevidRuntimeException.h>
-
-#include "revid_engine/renderer/vulkan/VulkanRenderer.h"
 
 VkShaderModule Revid::VulkanRenderer::createShaderModule(const std::vector<char>& code)
 {

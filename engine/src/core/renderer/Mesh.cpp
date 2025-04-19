@@ -1,5 +1,4 @@
-#include <revid_engine/renderer/vulkan/Mesh.h>
-
+#include <revid_engine/core/renderer/Mesh.h>
 #include <revid_engine/ServiceLocater.h>
 
 Revid::Mesh::Mesh(String file_name)

@@ -1,5 +1,5 @@
 #pragma once
-#include "revid_engine/renderer/vulkan/VulkanRenderer.h"
+#include <revid_engine/core/renderer/VulkanRenderer.h>
 
 inline void Revid::VulkanRenderer::recordCommandBuffer(const VkCommandBuffer& commandBuffer, uint32_t imageIndex)
 {

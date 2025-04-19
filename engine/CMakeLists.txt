@@ -4,12 +4,14 @@ project(revid_engine VERSION 0.0.1 LANGUAGES CXX)
 set(CMAKE_CXX_STANDARD 17)
 
 set(SOURCES
-        src/platform/CustomWindow.cpp
         src/Engine.cpp
-        src/renderer/vulkan/VulkanRenderer.cpp
-        src/platform/Camera.cpp
-        src/renderer/vulkan/Mesh.cpp
-        src/platform/InputHandler.cpp)
+
+        src/core/renderer/VulkanRenderer.cpp
+        src/core/renderer/Mesh.cpp
+
+        src/window/CustomWindow.cpp
+        src/input/Camera.cpp
+        src/input/InputHandler.cpp)
 
 add_library(${PROJECT_NAME} ${SOURCES})
 

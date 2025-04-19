@@ -1,5 +1,5 @@
 #pragma once
-#include "revid_engine/renderer/vulkan/VulkanRenderer.h"
+#include <revid_engine/core/renderer/VulkanRenderer.h>
 #include "exceptions/RevidRuntimeException.h"
 
 VkFormat Revid::VulkanRenderer::findSupportedFormat(const std::vector<VkFormat>& candidates, VkImageTiling tiling, VkFormatFeatureFlags features)

@@ -1,5 +1,5 @@
 #pragma once
-#include "maths/Vec.h"
+#include <maths/Vec.h>
 
 namespace Revid
 {

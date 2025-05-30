@@ -3,8 +3,6 @@
 #include <maths/Vec.h>
 #include <array>
 
-#include <revid_engine/core/renderer/utils/VertexUtils.h>
-
 namespace Revid
 {
     struct SimpleVertex

@@ -1,5 +1,5 @@
 #pragma once
-#include <revid_engine/core/renderer/VulkanRenderer.h>
+#include <revid_engine/core/renderer/Renderer.h>
 
 void Revid::VulkanRenderer::createBuffer(VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties,
                                          VkBuffer& buffer, VkDeviceMemory& bufferMemory)

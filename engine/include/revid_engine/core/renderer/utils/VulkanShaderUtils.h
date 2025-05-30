@@ -1,5 +1,5 @@
 #pragma once
-#include <revid_engine/core/renderer/VulkanRenderer.h>
+#include <revid_engine/core/renderer/Renderer.h>
 #include <exceptions/RevidRuntimeException.h>
 
 VkShaderModule Revid::VulkanRenderer::createShaderModule(const std::vector<char>& code)

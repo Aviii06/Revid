@@ -1,8 +1,8 @@
-#include <revid_engine/window/CustomWindow.h>
+#include <revid_engine/window/Window.h>
 #include <exceptions/RevidRuntimeException.h>
 #include <revid_engine/ServiceLocater.h>
 
-void Revid::CustomWindow::OpenWindow(const WindowData& windowData)
+void Revid::Window::OpenWindow(const WindowData& windowData)
 {
 	m_windowData.m_title = std::move(windowData.m_title);
 	m_windowData.m_height = windowData.m_height;
@@ -22,34 +22,34 @@ void Revid::CustomWindow::OpenWindow(const WindowData& windowData)
 	glfwSetFramebufferSizeCallback(m_window, framebufferResizeCallback);
 }
 
-bool Revid::CustomWindow::Update()
+bool Revid::Window::Update()
 {
     glfwPollEvents();
 
     return glfwWindowShouldClose(m_window);
 }
 
-void Revid::CustomWindow::Shutdown()
+void Revid::Window::Shutdown()
 {
     glfwDestroyWindow(m_window);
     glfwTerminate();
 }
 
-bool Revid::CustomWindow::IsKeyPressed(int key)
+bool Revid::Window::IsKeyPressed(int key)
 {
 	int state = glfwGetKey(m_window, key);
 
 	return state == GLFW_PRESS || state == GLFW_REPEAT;
 }
 
-bool Revid::CustomWindow::IsMouseButtonPressed(int button)
+bool Revid::Window::IsMouseButtonPressed(int button)
 {
 	int state = glfwGetMouseButton(m_window, button);
 
 	return state == GLFW_PRESS;
 }
 
-Revid::Maths::Vec2 Revid::CustomWindow::GetMousePos()
+Revid::Maths::Vec2 Revid::Window::GetMousePos()
 {
 	// get curr mouse position x
 	Maths::Vec2 pos;
@@ -58,7 +58,7 @@ Revid::Maths::Vec2 Revid::CustomWindow::GetMousePos()
 	return pos;
 }
 
-void Revid::CustomWindow::GetDrawSurface(Map<SurfaceArgs, int*> surfaceArgs)
+void Revid::Window::GetDrawSurface(Map<SurfaceArgs, int*> surfaceArgs)
 {
     auto vkInstance = reinterpret_cast<VkInstance>(surfaceArgs[SurfaceArgs::INSTANCE]);
     auto *allocationCallbacks = surfaceArgs[SurfaceArgs::ALLOCATORS] ?
@@ -85,15 +85,15 @@ void Revid::CustomWindow::GetDrawSurface(Map<SurfaceArgs, int*> surfaceArgs)
 // 	return {width, height};
 // }
 
-void Revid::CustomWindow::framebufferResizeCallback(GLFWwindow* window, int width, int height)
+void Revid::Window::framebufferResizeCallback(GLFWwindow* window, int width, int height)
 {
-	auto m_window = reinterpret_cast<CustomWindow*>(glfwGetWindowUserPointer(window));
+	auto m_window = reinterpret_cast<Window*>(glfwGetWindowUserPointer(window));
 	m_window->m_windowData.m_width = width;
 	m_window->m_windowData.m_height = height;
 	ServiceLocator::GetRenderer()->FramebufferResized();
 }
 
-void Revid::CustomWindow::WaitForEvents()
+void Revid::Window::WaitForEvents()
 {
 	glfwWaitEvents();
 }

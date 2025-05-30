@@ -1,5 +1,5 @@
 #pragma once
-#include <revid_engine/core/renderer/VulkanRenderer.h>
+#include <revid_engine/core/renderer/Renderer.h>
 
 Revid::QueueFamilyIndices Revid::VulkanRenderer::findQueueFamilies(VkPhysicalDevice device) const
 {

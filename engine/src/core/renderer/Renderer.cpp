@@ -1,4 +1,4 @@
-#include <revid_engine/core/renderer/VulkanRenderer.h>
+#include <revid_engine/core/renderer/Renderer.h>
 #include <revid_engine/core/renderer/utils/VulkanValidationUtils.h>
 #include <revid_engine/core/renderer/utils/VulkanDebugUtils.h>
 #include <revid_engine/core/renderer/utils/VulkanPhysicalDeviceUtils.h>

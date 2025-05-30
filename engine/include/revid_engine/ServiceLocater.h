@@ -1,8 +1,8 @@
 #pragma once
-#include <revid_engine/window/CustomWindow.h>
+#include <revid_engine/window/Window.h>
 #include <revid_engine/input/Camera.h>
 #include <revid_engine/input/InputHandler.h>
-#include <revid_engine/core/renderer/VulkanRenderer.h>
+#include <revid_engine/core/renderer/Renderer.h>
 
 #include <logging/Logging.h>
 #include <types/SmartPointers.h>
@@ -13,7 +13,7 @@ namespace Revid
     class ServiceLocator
     {
     private:
-        static inline Ptr<CustomWindow> s_window = nullptr;
+        static inline Ptr<Window> s_window = nullptr;
         static inline Ptr<VulkanRenderer> s_renderer = nullptr;
         static inline Ptr<EditorCamera> s_camera = nullptr;
         static inline Ptr<InputHandler> s_inputHandler = nullptr;
@@ -34,11 +34,11 @@ namespace Revid
         }
 
     public:
-        static inline void Provide(CustomWindow *window)
+        static inline void Provide(Window *window)
         {
             Logger::Log(LogLevel::INFO, "Creating a Window");
             if (s_window != nullptr) return;
-            s_window = std::unique_ptr<CustomWindow>(window);
+            s_window = std::unique_ptr<Window>(window);
         }
 
         static inline void Provide(VulkanRenderer *renderer, RendererSettings settings)
@@ -66,7 +66,7 @@ namespace Revid
             s_inputHandler = std::unique_ptr<InputHandler>(handler);
         }
 
-        static inline const Ptr<CustomWindow>& GetWindow() { return s_window; }
+        static inline const Ptr<Window>& GetWindow() { return s_window; }
         static inline const Ptr<VulkanRenderer>& GetRenderer() { return s_renderer; }
         static inline const Ptr<EditorCamera>& GetCamera() { return s_camera; }
         static inline const Ptr<InputHandler>& GetInputHandler() { return s_inputHandler; }

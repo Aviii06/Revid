@@ -19,7 +19,7 @@ namespace Revid
         OUT_SURFACE
     };
 
-    class CustomWindow
+    class Window
     {
     public:
         GLFWwindow* GetGLFWWindow() const { return m_window; }
@@ -28,7 +28,7 @@ namespace Revid
         const char** GetExtentions() const  { return m_extensions; };
         const WindowData& GetWindowData() const { return m_windowData; }
 
-        CustomWindow() = default;
+        Window() = default;
         void OpenWindow(const WindowData&);
         bool Update();
         void Shutdown();

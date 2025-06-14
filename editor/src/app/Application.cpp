@@ -7,7 +7,7 @@
 #define GLM_ENABLE_EXPERIMENTAL
 #include "glm/gtx/transform.hpp"
 #include "logging/Logging.h"
-#include "gui/ImguiHelper.h"
+#include "gui/EditorUIManager.h"
 
 RevidEditor::Application::Application()
     : Application("Revid")

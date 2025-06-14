@@ -1,3 +1,4 @@
+#include <cassert>
 #include "revid_engine/core/ecs/EntityManager.h"
 
 namespace Revid
@@ -5,48 +6,48 @@ namespace Revid
 
 	EntityManager::EntityManager()
 	{
-		m_entities.reserve(MAX_ENTITIES);
-		m_EntityIDToIndex.reserve(MAX_ENTITIES);
-		m_totalEntities = 0;
+		m_livingEntities = 0;
 
-		for (int i = 0; i < MAX_ENTITIES; i++)
+		for (int entity = 0; entity < MAX_ENTITIES; ++entity)
 		{
-			m_EntityIDToIndex.push_back(-1);
+			// TODO: Reserve this?
+			m_availableEntities.push(entity);
 		}
 	}
 
 	Entity EntityManager::CreateEntity()
 	{
-		m_entities.push_back({m_totalEntities, 0});
-		m_EntityIDToIndex[m_totalEntities] = m_totalEntities++;
+		assert(m_livingEntities < MAX_ENTITIES && "Too many entities in existence.");
 
-		return {m_totalEntities - 1, 0};
+		Entity entity = m_availableEntities.front();
+		m_availableEntities.pop();
+		++m_livingEntities;
+
+		return entity;
 	}
 
-	inline bool EntityManager::DeleteEntity(EntityID id)
+	inline bool EntityManager::DeleteEntity(Entity entity)
 	{
-		if (m_EntityIDToIndex[id] == -1)
-		{
-			return false;
-		}
+		m_signatures[entity].reset();
 
-		m_entities[m_EntityIDToIndex[id]] = m_entities[m_totalEntities - 1];
-		m_EntityIDToIndex[m_totalEntities - 1] = m_EntityIDToIndex[id];
-		m_EntityIDToIndex[id] = -1;
+		m_availableEntities.push(entity);
+		--m_livingEntities;
 
-		m_entities.pop_back();
 		return true;
 	}
 
-	inline Signature EntityManager::GetComponents(EntityID id)
+	void EntityManager::SetSignature(Entity entity, Signature signature)
 	{
-		int index = m_EntityIDToIndex[id];
-		if (index == -1)
-		{
-			return 0;
-		}
-		Entity entity = m_entities[index];
-		return entity.GetSignature();
+		assert(entity < MAX_ENTITIES && "Entity out of range.");
+
+		m_signatures[entity] = signature;
+	}
+
+	Signature EntityManager::GetSignature(Entity entity) const
+	{
+		assert(entity < MAX_ENTITIES && "Entity out of range.");
+
+		return m_signatures[entity];
 	}
 }
 

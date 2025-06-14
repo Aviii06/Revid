@@ -11,15 +11,13 @@ namespace Revid
 		EntityManager();
 
 		Entity CreateEntity();
-		bool DeleteEntity(EntityID id);
-
+		bool DeleteEntity(Entity id);
 		void SetSignature(Entity entity, Signature signature);
-
-		Signature GetSignature(EntityID id);
+		Signature GetSignature(Entity entity) const;
 
 	private:
-		Queue<Entity> m_entities;
-		Vector<size_t> m_EntityIDToIndex;
-		int m_totalEntities;
+		Queue<Entity> m_availableEntities;
+		Array<Signature, MAX_ENTITIES> m_signatures;
+		uint32_t m_livingEntities;
 	};
 }

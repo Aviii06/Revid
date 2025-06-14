@@ -1,4 +1,4 @@
-#include "TransformComponent.h"
+#include "revid_engine/core/ecs/components/TransformComponent.h"
 
 #include "imgui.h"
 #include "maths/Vec.h"

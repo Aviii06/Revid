@@ -7,7 +7,7 @@ namespace Revid
 	class System
 	{
 	public:
-		Vector<Entity> m_entities;
+		Set<Entity> m_entities;
 	};
 }
 

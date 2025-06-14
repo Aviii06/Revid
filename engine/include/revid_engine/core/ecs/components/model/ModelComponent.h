@@ -1,16 +1,16 @@
 #pragma once
 
-#include "core/ecs/Component.h"
+#include "revid_engine/core/ecs/Component.h"
 #include "types/Containers.h"
 #include "types/SmartPointers.h"
 #include "revid_engine/core/renderer/Mesh.h"
 
 namespace Revid
 {
-	struct ModelComponent : public Component<ComponentType::ModelComponent>
-	{
-		Vector<Ref<Mesh>> m_meshes;
-	};
+	// struct ModelComponent : public
+	// {
+	// 	Vector<Ref<Mesh>> m_meshes;
+	// };
 
 	// /*!
 	//  * @class ModelComponent
@@ -37,4 +37,9 @@ namespace Revid
 	// 	inline Vector<Revid::Mesh*> GetMeshes() { return m_Meshes; }
 	// 	ComponentType GetComponentType() override { return ComponentType::ModelComponent; }
 	// };
+
+	struct ModelComponent
+	{
+		Vector<Ref<Mesh>> m_Meshes;
+	};
 }

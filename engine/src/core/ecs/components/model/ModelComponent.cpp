@@ -1,10 +1,6 @@
-#include "ModelComponent.h"
-#include "imgui/imgui/imgui.h"
-#include "core/ecs/components/TransformComponent.h"
-#include "core/os/FileDialogue.h"
-#include "core/renderer/Texture.h"
-#include "editor/assets/Assets.h"
-#include "core/ecs/ECS.h"
+#include "imgui.h"
+#include "revid_engine/core/ecs/components/TransformComponent.h"
+#include "revid_engine/core/ecs/ECS.h"
 
 #define MAX_MESHES 10
 

@@ -4,9 +4,5 @@
 
 namespace Revid
 {
-	template <ComponentType ct>
-	struct Component
-	{
-		static ComponentType GetComponentType() { return ct; }
-	};
+
 }

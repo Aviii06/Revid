@@ -1,10 +1,10 @@
 #pragma once
 #include "maths/Vec.h"
-#include "core/ecs/Component.h"
+#include "revid_engine/core/ecs/Registry.h"
 
 namespace Revid
 {
-	struct TransformComponent : public Component<ComponentType::TransformComponent>
+	struct TransformComponent
 	{
 		Maths::Vec3 m_position;
 		Maths::Vec3 m_rotation;

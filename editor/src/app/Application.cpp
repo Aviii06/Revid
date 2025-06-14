@@ -1,7 +1,8 @@
 #include "Application.h"
 #include "revid_engine/ServiceLocater.h"
-#include <revid_engine/window/CustomWindow.h>
-#include <revid_engine/core/renderer/VulkanRenderer.h>
+#include <revid_engine/window/Window.h>
+#include <revid_engine/core/renderer/Renderer.h>
+#include <revid_engine/core/ecs/systems/TransformSystem.h>
 
 #define GLM_ENABLE_EXPERIMENTAL
 #include "glm/gtx/transform.hpp"
@@ -47,7 +48,7 @@ void RevidEditor::Application::Run()
 
 void RevidEditor::Application::intializeServices()
 {
-    Revid::ServiceLocator::Provide(new Revid::CustomWindow());
+    Revid::ServiceLocator::Provide(new Revid::Window());
 
     Revid::ServiceLocator::GetWindow()->OpenWindow({
         m_title,
@@ -68,6 +69,12 @@ void RevidEditor::Application::intializeServices()
 
 	Revid::ServiceLocator::Provide(new Revid::InputHandler());
 
+
+	Revid::ServiceLocator::Provide(new Revid::ComponentManager());
+	Revid::ServiceLocator::InitialiseComponents<Revid::TransformComponent>();
+	Revid::ServiceLocator::Provide(new Revid::SystemManager());
+	Revid::ServiceLocator::InitialiseSystems<Revid::TransformSystem>();
+
 	Ref<Revid::Mesh> mesh = MakeRef<Revid::Mesh>("./assets/obj/grass.obj");
 	mesh->SetInstanceCount(2e4);
 	glm::mat4 modelMatrix2 = glm::mat4(1.0f);
@@ -81,6 +88,7 @@ void RevidEditor::Application::intializeServices()
 	planeMesh->SetModelMatrix(modelMatrix);
 	Revid::ServiceLocator::GetRenderer()->AddMeshToScene(planeMesh);
 	//Revid::ServiceLocator::GetRenderer()->UpdateObj("./assets/obj/bunny.obj");
+
 
 	// Imgui setup
 	setupImgui();

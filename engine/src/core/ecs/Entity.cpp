@@ -2,12 +2,6 @@
 
 namespace Revid
 {
-	Entity::Entity(int id, int signature)
-		: m_id(id)
-		, m_signature(signature)
-	{
-	}
-
 }
 
 

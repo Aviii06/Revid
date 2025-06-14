@@ -14,7 +14,7 @@ inline void Revid::VulkanRenderer::recordCommandBuffer(const VkCommandBuffer& co
     VkRenderPassBeginInfo renderPassInfo{};
     renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
     renderPassInfo.renderPass = m_renderPass;
-    renderPassInfo.framebuffer = m_swapChainFramebuffers[imageIndex];
+    renderPassInfo.framebuffer = m_sceneFramebuffers[imageIndex];
     renderPassInfo.renderArea.offset = {0, 0};
     renderPassInfo.renderArea.extent = m_swapChainExtent;
 
@@ -23,7 +23,7 @@ inline void Revid::VulkanRenderer::recordCommandBuffer(const VkCommandBuffer& co
         { {0.0f, 0.0f, 0.0f, 1.0f} }, // Color
         { {0.0f, 0.0f, 0.0f, 1.0f} }, // Normal
         {}, // Depth
-        { {0.0f, 0.0f, 0.0f, 1.0f} }  // Swapchain
+        { {0.0f, 0.0f, 0.0f, 1.0f} }  //
     };
 
     clearValues[3].depthStencil = {1.0f, 0};

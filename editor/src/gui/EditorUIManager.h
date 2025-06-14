@@ -52,7 +52,7 @@ namespace RevidEditor
 
 		// auto sceneTextureID = ImGui_ImplVulkan_AddTexture(
 		// 	Revid::ServiceLocator::GetRenderer()->GetSceneSampler(),                // Any basic sampler will do
-		// 	Revid::ServiceLocator::GetRenderer()->GetOffscreenImageView(), // The image view of the scene color attachment
+		// 	Revid::ServiceLocator::GetRenderer()->GetSceneImageView(), // The image view of the scene color attachment
 		// 	VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL
 		// );
 
@@ -61,7 +61,6 @@ namespace RevidEditor
 		ImVec2 viewportPanelSize = ImGui::GetContentRegionAvail();
 
 		// Maintain aspect ratio if needed
-
 		// ImGui::Image(
 		// 	sceneTextureID,
 		// 	viewportPanelSize,

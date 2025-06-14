@@ -9,11 +9,11 @@ namespace RevidUtils
 	{
 		std::ifstream file(filename, std::ios::ate | std::ios::binary);
 
-		if (!file.is_open())
+		if (!file.is_open())    
 		{
 			String msg = "Failed to open file: " + filename;
 			throw Revid::RevidRuntimeException(msg.c_str());
-		}
+		}	
 
 		size_t fileSize = (size_t) file.tellg();
 		std::vector<char> buffer(fileSize);

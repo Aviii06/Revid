@@ -64,6 +64,16 @@ namespace Revid
         VkDevice GetDeivce() const { return m_device; }
         void FramebufferResized() { m_framebufferResized = true; }
 
+        VkSampler GetSceneSampler() const
+        {
+            return m_sceneSampler;
+        }
+
+        VkImageView GetSceneImageView() const
+        {
+            return m_sceneImageViews[m_currentFrame];
+        }
+
         ImGui_ImplVulkan_InitInfo GetInitInfo() const
         {
             ImGui_ImplVulkan_InitInfo init_info = {};
@@ -79,7 +89,6 @@ namespace Revid
             init_info.MSAASamples = VK_SAMPLE_COUNT_1_BIT;
             init_info.Allocator = nullptr;
             init_info.CheckVkResultFn = check_vk_result;
-            init_info.Subpass = 1;
             init_info.RenderPass = m_renderPass;
 
             return init_info;
@@ -96,6 +105,7 @@ namespace Revid
         void createSwapChain();
         void createGbufferImages();
         void createImageViews();
+        void createSceneSampler();
         void createRenderPass();
         void createDescriptorSetLayout();
         void createGbufferPipeline();
@@ -308,5 +318,11 @@ namespace Revid
         Vector<Ref<Mesh>> m_meshes;
 
         VkDescriptorPool m_imguiDescriptorPool;
+
+        VkSampler m_sceneSampler;
+        Vector<VkImage> m_sceneImages;
+        Vector<VkDeviceMemory> m_sceneImageMemories;
+        Vector<VkImageView> m_sceneImageViews;
+        Vector<VkFramebuffer> m_sceneFramebuffers;
     };
 }

@@ -36,6 +36,7 @@ void Revid::VulkanRenderer::Init(const RendererSettings& rendererSettings)
     createSurface();
     pickPhysicalDevice();
     createLogicalDevices();
+	createSceneSampler();
 
     createSwapChain();
 	createGbufferImages();
@@ -353,6 +354,30 @@ void Revid::VulkanRenderer::createInstance()
     }
 }
 
+void Revid::VulkanRenderer::createSceneSampler()
+{
+	VkSamplerCreateInfo samplerInfo{};
+	samplerInfo.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
+	samplerInfo.magFilter = VK_FILTER_LINEAR;
+	samplerInfo.minFilter = VK_FILTER_LINEAR;
+	samplerInfo.addressModeU = VK_SAMPLER_ADDRESS_MODE_REPEAT;
+	samplerInfo.addressModeV = VK_SAMPLER_ADDRESS_MODE_REPEAT;
+	samplerInfo.addressModeW = VK_SAMPLER_ADDRESS_MODE_REPEAT;
+	samplerInfo.anisotropyEnable = VK_FALSE;
+	samplerInfo.maxAnisotropy = 16.0f; // Adjust as needed
+	samplerInfo.borderColor = VK_BORDER_COLOR_INT_OPAQUE_BLACK;
+	samplerInfo.unnormalizedCoordinates = VK_FALSE;
+	samplerInfo.compareEnable = VK_FALSE;
+	samplerInfo.compareOp = VK_COMPARE_OP_ALWAYS;
+	samplerInfo.mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR;
+
+	if (vkCreateSampler(m_device, &samplerInfo, nullptr, &m_sceneSampler) != VK_SUCCESS)
+	{
+		throw RevidRuntimeException("Failed to create scene sampler!");
+	}
+}
+
+
 void Revid::VulkanRenderer::setupDebugMessenger()
 {
     if (!m_enableValidationLayers) return;
@@ -556,11 +581,13 @@ void Revid::VulkanRenderer::createGbufferImages()
 	m_positionImages.resize(m_swapChainImages.size());
 	m_normalImages.resize(m_swapChainImages.size());
 	m_colorImages.resize(m_swapChainImages.size());
+	m_sceneImages.resize(m_swapChainImages.size());
 
 	m_depthImageMemories.resize(m_swapChainImages.size());
 	m_positionImageMemories.resize(m_swapChainImages.size());
 	m_normalImageMemories.resize(m_swapChainImages.size());
 	m_colorImageMemories.resize(m_swapChainImages.size());
+	m_sceneImageMemories.resize(m_swapChainImages.size());
 
 	for (size_t i = 0; i < m_swapChainImages.size(); i++)
 	{
@@ -603,6 +630,16 @@ void Revid::VulkanRenderer::createGbufferImages()
 			VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
 			m_colorImages[i],
 			m_colorImageMemories[i]);
+
+		createImage(
+			m_device,
+			m_swapChainExtent.width,
+			m_swapChainExtent.height,
+			VK_FORMAT_R8G8B8A8_UNORM, // Use the same format as the swap chain
+			VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT,
+			VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
+			m_sceneImages[i],
+			m_sceneImageMemories[i]);
 	}
 }
 
@@ -614,6 +651,8 @@ void Revid::VulkanRenderer::createImageViews()
 	m_positionImageViews.resize(m_swapChainImages.size());
 	m_colorImageViews.resize(m_swapChainImages.size());
 	m_normalImageViews.resize(m_swapChainImages.size());
+	m_swapChainImageViews.resize(m_swapChainImages.size());
+	m_sceneImageViews.resize(m_swapChainImages.size());
 
 	for (size_t i = 0; i < m_swapChainImages.size(); i++)
 	{
@@ -644,6 +683,12 @@ void Revid::VulkanRenderer::createImageViews()
 		m_colorImageViews[i] = createImageView(
 			m_device,
 			m_colorImages[i],
+			VK_FORMAT_R8G8B8A8_UNORM,
+			VK_IMAGE_ASPECT_COLOR_BIT);
+
+		m_sceneImageViews[i] = createImageView(
+			m_device,
+			m_sceneImages[i],
 			VK_FORMAT_R8G8B8A8_UNORM,
 			VK_IMAGE_ASPECT_COLOR_BIT);
 	}
@@ -684,13 +729,13 @@ void Revid::VulkanRenderer::createRenderPass()
 	attachments[3].initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
 	attachments[3].finalLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
 
-	// Swapchain attachment
-	attachments[4].format = m_swapChainImageFormat; // Retrieved from swapchain
+	// OutputSceneBuffer attachment
+	attachments[4].format = VK_FORMAT_R8G8B8A8_UNORM;
 	attachments[4].samples = VK_SAMPLE_COUNT_1_BIT;
 	attachments[4].loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
 	attachments[4].storeOp = VK_ATTACHMENT_STORE_OP_STORE;
 	attachments[4].initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-	attachments[4].finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
+	attachments[4].finalLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
 
 
 	VkAttachmentReference geometryColorAttachments[3] = {
@@ -1055,7 +1100,8 @@ void Revid::VulkanRenderer::createLightingPipeline()
 
 void Revid::VulkanRenderer::createFramebuffers()
 {
-	m_swapChainFramebuffers.resize(m_swapChainImageViews.size());
+	m_swapChainFramebuffers.resize(m_sceneImageViews.size());
+	m_sceneFramebuffers.resize(m_swapChainImageViews.size());
 
 	for (size_t i = 0; i < m_swapChainImageViews.size(); i++)
 	{
@@ -1064,7 +1110,8 @@ void Revid::VulkanRenderer::createFramebuffers()
 			m_colorImageViews[i],
 			m_normalImageViews[i],
 			m_depthImageViews[i],
-			m_swapChainImageViews[i]
+			m_sceneImageViews[i],
+			// m_swapChainImageViews[i]
 		};
 
 		VkFramebufferCreateInfo framebufferInfo{};
@@ -1075,6 +1122,11 @@ void Revid::VulkanRenderer::createFramebuffers()
 		framebufferInfo.width = m_swapChainExtent.width;
 		framebufferInfo.height = m_swapChainExtent.height;
 		framebufferInfo.layers = 1;
+
+		if (vkCreateFramebuffer(m_device, &framebufferInfo, nullptr, &m_sceneFramebuffers[i]) != VK_SUCCESS)
+		{
+			throw RevidRuntimeException("failed to create framebuffer!");
+		}
 
 		if (vkCreateFramebuffer(m_device, &framebufferInfo, nullptr, &m_swapChainFramebuffers[i]) != VK_SUCCESS)
 		{
@@ -1399,3 +1451,5 @@ void Revid::VulkanRenderer::createLightingDescriptorSets()
 		vkUpdateDescriptorSets(m_device, 3, descriptorWrites, 0, nullptr);
 	}
 }
+
+

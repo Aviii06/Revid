@@ -23,9 +23,7 @@ namespace Revid
         static inline Ptr<InputHandler> s_inputHandler = nullptr;
 
         // ECS subsystem
-        static inline Ptr<EntityManager> s_entityManager = nullptr;
-        static inline Ptr<ComponentManager> s_componentManager = nullptr;
-        static inline Ptr<SystemManager> s_systemManager = nullptr;
+        static inline Ptr<Coordinator> s_coordinator = nullptr;
 
         static inline void shutdownWindow()
         {
@@ -76,22 +74,11 @@ namespace Revid
         }
 
         // ECS subsystem
-        static inline void Provide(EntityManager* entityManager)
+        static inline void Provide(Coordinator* coordinator)
         {
-            if (s_entityManager != nullptr) return;
-            s_entityManager = std::unique_ptr<EntityManager>(entityManager);
-        }
-
-        static inline void Provide(ComponentManager* componentManager)
-        {
-            if (s_componentManager != nullptr) return;
-            s_componentManager = std::unique_ptr<ComponentManager>(componentManager);
-        }
-
-        static inline void Provide(SystemManager* systemManager)
-        {
-            if (s_systemManager != nullptr) return;
-            s_systemManager = std::unique_ptr<SystemManager>(systemManager);
+            if (s_coordinator != nullptr) return;
+            s_coordinator = std::unique_ptr<Coordinator>(coordinator);
+            s_coordinator->Init();
         }
 
         template<typename... Systems>
@@ -105,13 +92,7 @@ namespace Revid
                     static_assert(std::is_base_of_v<System, Systems>,
                                   "System must inherit from the class System.");
 
-                    static_assert(std::is_same_v<decltype(Systems::GetSignature()), Signature>,
-                                  "System must define: static Signature GetSignature()");
-
-                    // Create and register the system
-                    const char* systemName = typeid(Systems).name();
-                    GetSystemManager()->RegisterSystem<Systems>(systemName);;
-                    GetSystemManager()->SetSignature<Systems>(Systems::GetSignature());
+                    GetECSCoordinator()->RegisterSystem<Systems>();
                 }(), 0)...
             };
         }
@@ -124,7 +105,7 @@ namespace Revid
                 ([
                 ]
                 {
-                    GetComponentManager()->RegisterComponent<Components>();;
+                    GetECSCoordinator()->RegisterComponent<Components>();;
                 }(), 0)...
             };
         }
@@ -135,15 +116,7 @@ namespace Revid
         static inline const Ptr<EditorCamera>& GetCamera() { return s_camera; }
         static inline const Ptr<InputHandler>& GetInputHandler() { return s_inputHandler; }
 
-        static inline const Ptr<EntityManager>& GetEntityManager() { return s_entityManager; }
-        static inline const Ptr<ComponentManager>& GetComponentManager() { return s_componentManager; }
-        static inline const Ptr<SystemManager>& GetSystemManager() { return s_systemManager; }
-
-        template <typename T>
-        static inline const Ref<T> GetSystem()
-        {
-            return GetSystemManager()->GetSystem<T>();
-        }
+        static inline const Ptr<Coordinator>& GetECSCoordinator() { return s_coordinator; }
 
         static inline void ShutdownServices()
         {

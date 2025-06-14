@@ -10,11 +10,5 @@ namespace Revid
 	class TransformSystem: public System
 	{
 	public:
-		static Signature GetSignature()
-        {
-            Signature signature;
-            signature.set((size_t)ServiceLocator::GetComponentManager()->GetComponentType<TransformComponent>());
-            return signature;
-        }
 	};
 }

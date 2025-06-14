@@ -22,7 +22,7 @@ namespace RevidEditor
 		ImGuiIO& io = ImGui::GetIO();
 		(void)io;
 		io.Fonts->AddFontDefault();
-		io.Fonts->Build();
+		// io.Fonts->Build();
 		io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard; // Enable Keyboard Controls
 		io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad; // Enable Gamepad Controls
 

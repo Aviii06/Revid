@@ -15,7 +15,7 @@ namespace Revid
 		}
 
 		template <typename T>
-		Ref<System> RegisterSystem(const char* name)
+		Ref<T> RegisterSystem()
 		{
 			const char* typeName = typeid(T).name();
 			Ref<T> system = MakeRef<T>();
@@ -24,7 +24,7 @@ namespace Revid
 		}
 
 		template <typename T>
-		Ref<System> GetSystem()
+		Ref<T> GetSystem()
 		{
 			const char* typeName = typeid(T).name();
 			auto it = m_systems.find(typeName);

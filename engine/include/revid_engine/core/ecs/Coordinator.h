@@ -91,6 +91,12 @@ namespace Revid
 			m_systemManager->SetSignature<T>(signature);
 		}
 
+		template <typename T>
+		Ref<T> GetSystem()
+		{
+			return m_systemManager->GetSystem<T>();
+		}
+
 	private:
 		Ptr<ComponentManager> m_componentManager;
 		Ptr<EntityManager> m_entityManager;

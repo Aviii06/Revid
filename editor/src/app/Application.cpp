@@ -70,9 +70,8 @@ void RevidEditor::Application::intializeServices()
 	Revid::ServiceLocator::Provide(new Revid::InputHandler());
 
 
-	Revid::ServiceLocator::Provide(new Revid::ComponentManager());
+	Revid::ServiceLocator::Provide(new Revid::Coordinator());
 	Revid::ServiceLocator::InitialiseComponents<Revid::TransformComponent>();
-	Revid::ServiceLocator::Provide(new Revid::SystemManager());
 	Revid::ServiceLocator::InitialiseSystems<Revid::TransformSystem>();
 
 	Ref<Revid::Mesh> mesh = MakeRef<Revid::Mesh>("./assets/obj/grass.obj");

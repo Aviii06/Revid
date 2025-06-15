@@ -29,7 +29,7 @@ namespace RevidEditor
 		ImGui_ImplGlfw_NewFrame();
 		ImGui::NewFrame();
 
-		// RenderDockspace();
+		RenderDockspace();
 		static float f = 0.0f;
 		static int counter = 0;
 
@@ -74,7 +74,7 @@ namespace RevidEditor
 		ImGui::End();
 
 		// Ends the dock
-		// ImGui::End();
+		ImGui::End();
 
 		ImGui::Render();
 	}

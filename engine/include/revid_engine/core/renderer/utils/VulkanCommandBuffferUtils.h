@@ -73,9 +73,47 @@ inline void Revid::VulkanRenderer::recordCommandBuffer(const VkCommandBuffer& co
     vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_lightingPipelineLayout, 0, 1, &m_lightingDescriptorSets[m_currentFrame], 0, nullptr);
     vkCmdDrawIndexed(commandBuffer, static_cast<uint32_t>(m_indices2.size()), 1, 0, 0, 0);
 
+    vkCmdEndRenderPass(commandBuffer);
+
+	VkImageMemoryBarrier barrier = {};
+	barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+	barrier.oldLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+	barrier.newLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+	barrier.srcAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+	barrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
+	barrier.image = m_sceneImages[imageIndex];
+	barrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+	barrier.subresourceRange.baseMipLevel = 0;
+	barrier.subresourceRange.levelCount = 1;
+	barrier.subresourceRange.baseArrayLayer = 0;
+	barrier.subresourceRange.layerCount = 1;
+
+	vkCmdPipelineBarrier(
+		commandBuffer,
+		VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,  // after lighting render
+		VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,          // before ImGui shader reads
+		0,
+		0, nullptr,
+		0, nullptr,
+		1, &barrier
+	);
+
+	VkRenderPassBeginInfo imguiRenderpassInfo{};
+    imguiRenderpassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
+    imguiRenderpassInfo.renderPass = m_imguiRenderPass;
+    imguiRenderpassInfo.framebuffer = m_swapChainFramebuffers[imageIndex];
+    imguiRenderpassInfo.renderArea.offset = {0, 0};
+    imguiRenderpassInfo.renderArea.extent = m_swapChainExtent;
+    imguiRenderpassInfo.clearValueCount = 1;
+    VkClearValue clearValue = { {0.0f, 0.0f, 0.0f, 0.0f} };
+    imguiRenderpassInfo.pClearValues = &clearValue;
+
+	vkCmdBeginRenderPass(commandBuffer, &imguiRenderpassInfo, VK_SUBPASS_CONTENTS_INLINE);
+
     ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), commandBuffer);
 
-    vkCmdEndRenderPass(commandBuffer);
+	vkCmdEndRenderPass(commandBuffer);
+
 
     if (vkEndCommandBuffer(commandBuffer) != VK_SUCCESS)
 	{

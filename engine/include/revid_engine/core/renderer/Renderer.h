@@ -89,7 +89,8 @@ namespace Revid
             init_info.MSAASamples = VK_SAMPLE_COUNT_1_BIT;
             init_info.Allocator = nullptr;
             init_info.CheckVkResultFn = check_vk_result;
-            init_info.RenderPass = m_renderPass;
+            init_info.Subpass = 0;
+            init_info.RenderPass = m_imguiRenderPass;
 
             return init_info;
         }
@@ -124,6 +125,7 @@ namespace Revid
         void createSyncObjects();
         void recreateSwapChain();
         void cleanupSwapChain();
+        void createImguiRenderPass();
 
     private:
         bool checkValidationLayers();
@@ -231,6 +233,7 @@ namespace Revid
         VkPipelineLayout m_lightingPipelineLayout;
 
         VkRenderPass m_renderPass;
+        VkRenderPass m_imguiRenderPass;
 
         const Vector<const char*> m_validationLayers = {
             "VK_LAYER_KHRONOS_validation"

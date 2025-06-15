@@ -42,6 +42,7 @@ void Revid::VulkanRenderer::Init(const RendererSettings& rendererSettings)
 	createGbufferImages();
 	createImageViews();
 	createRenderPass();
+	createImguiRenderPass();
 	CreateImguiDescriptorPool();
 	createDescriptorSetLayout();
 	createGbufferPipeline();
@@ -482,24 +483,14 @@ void Revid::VulkanRenderer::createLogicalDevices()
 void Revid::VulkanRenderer::CreateImguiDescriptorPool()
 {
 	VkDescriptorPoolSize pool_sizes[] =
-{
-		{ VK_DESCRIPTOR_TYPE_SAMPLER, 1000 },
-		{ VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1000 },
-		{ VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, 1000 },
-		{ VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, 1000 },
-		{ VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER, 1000 },
-		{ VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER, 1000 },
-		{ VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1000 },
-		{ VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1000 },
-		{ VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, 1000 },
-		{ VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC, 1000 },
-		{ VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, 1000 }
-};
+	{
+		{ VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1000 }
+	};
 
 	VkDescriptorPoolCreateInfo pool_info = {};
 	pool_info.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
 	pool_info.flags = VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT;
-	pool_info.maxSets = 1000;
+	pool_info.maxSets = 1000 * std::size(pool_sizes);
 	pool_info.poolSizeCount = std::size(pool_sizes);
 	pool_info.pPoolSizes = pool_sizes;
 
@@ -804,6 +795,47 @@ void Revid::VulkanRenderer::createRenderPass()
 	{
 		throw RevidRuntimeException("failed to create render pass!");
 	}
+}
+
+void Revid::VulkanRenderer::createImguiRenderPass()
+{
+	VkAttachmentDescription colorAttachment = {};
+	colorAttachment.format = m_swapChainImageFormat; // e.g., VK_FORMAT_B8G8R8A8_SRGB
+	colorAttachment.samples = VK_SAMPLE_COUNT_1_BIT;
+	colorAttachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR; // clear before use
+	colorAttachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE; // keep after render
+	colorAttachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+	colorAttachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+	colorAttachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+	colorAttachment.finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR; // must be ready for presentation
+
+	VkAttachmentReference colorAttachmentRef = {};
+	colorAttachmentRef.attachment = 0;
+	colorAttachmentRef.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+
+	VkSubpassDescription subpass = {};
+	subpass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
+	subpass.colorAttachmentCount = 1;
+	subpass.pColorAttachments = &colorAttachmentRef;
+
+	VkSubpassDependency dependency = {};
+	dependency.srcSubpass = VK_SUBPASS_EXTERNAL;
+	dependency.dstSubpass = 0;
+	dependency.srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+	dependency.srcAccessMask = 0;
+	dependency.dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+	dependency.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+
+	VkRenderPassCreateInfo renderPassInfo = {};
+	renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
+	renderPassInfo.attachmentCount = 1;
+	renderPassInfo.pAttachments = &colorAttachment;
+	renderPassInfo.subpassCount = 1;
+	renderPassInfo.pSubpasses = &subpass;
+	renderPassInfo.dependencyCount = 1;
+	renderPassInfo.pDependencies = &dependency;
+
+	check_vk_result(vkCreateRenderPass(m_device, &renderPassInfo, nullptr, &m_imguiRenderPass));
 }
 
 void Revid::VulkanRenderer::createDescriptorSetLayout()
@@ -1111,7 +1143,6 @@ void Revid::VulkanRenderer::createFramebuffers()
 			m_normalImageViews[i],
 			m_depthImageViews[i],
 			m_sceneImageViews[i],
-			// m_swapChainImageViews[i]
 		};
 
 		VkFramebufferCreateInfo framebufferInfo{};
@@ -1127,6 +1158,11 @@ void Revid::VulkanRenderer::createFramebuffers()
 		{
 			throw RevidRuntimeException("failed to create framebuffer!");
 		}
+
+		Vector<VkImageView> attachments2 = {m_swapChainImageViews[i]};
+		framebufferInfo.renderPass = m_imguiRenderPass;
+		framebufferInfo.attachmentCount = static_cast<uint32_t>(attachments2.size());
+		framebufferInfo.pAttachments = attachments2.data();
 
 		if (vkCreateFramebuffer(m_device, &framebufferInfo, nullptr, &m_swapChainFramebuffers[i]) != VK_SUCCESS)
 		{

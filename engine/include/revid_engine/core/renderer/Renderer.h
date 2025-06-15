@@ -96,6 +96,17 @@ namespace Revid
         }
         void CreateImguiDescriptorPool();
 
+        VkDescriptorSet GetCurrentDescSet()
+        {
+            return m_imguiDescriptorSets[m_currentFrame];
+        }
+
+        void SetCurrentDescSet(VkDescriptorSet descSet)
+        {
+            m_retiredImguiDescriptorSets.push_back(m_imguiDescriptorSets[m_currentFrame]);
+            m_imguiDescriptorSets[m_currentFrame] = descSet;
+        }
+
 
     private:
         void createInstance();
@@ -126,6 +137,7 @@ namespace Revid
         void recreateSwapChain();
         void cleanupSwapChain();
         void createImguiRenderPass();
+        void createImguiDescriptorSets();
 
     private:
         bool checkValidationLayers();
@@ -327,5 +339,8 @@ namespace Revid
         Vector<VkDeviceMemory> m_sceneImageMemories;
         Vector<VkImageView> m_sceneImageViews;
         Vector<VkFramebuffer> m_sceneFramebuffers;
+
+        Vector<VkDescriptorSet> m_imguiDescriptorSets;
+        Vector<VkDescriptorSet> m_retiredImguiDescriptorSets;
     };
 }

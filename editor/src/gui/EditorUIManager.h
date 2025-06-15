@@ -50,23 +50,26 @@ namespace RevidEditor
 		ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
 		ImGui::End();
 
-		// auto sceneTextureID = ImGui_ImplVulkan_AddTexture(
-		// 	Revid::ServiceLocator::GetRenderer()->GetSceneSampler(),                // Any basic sampler will do
-		// 	Revid::ServiceLocator::GetRenderer()->GetSceneImageView(), // The image view of the scene color attachment
-		// 	VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL
-		// );
+		// ImGui_ImplVulkan_RemoveTexture(Revid::ServiceLocator::GetRenderer()->GetCurrentDescSet());
+		auto sceneTextureID = ImGui_ImplVulkan_AddTexture(
+			Revid::ServiceLocator::GetRenderer()->GetSceneSampler(),                // Any basic sampler will do
+			Revid::ServiceLocator::GetRenderer()->GetSceneImageView(), // The image view of the scene color attachment
+			VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL
+		);
+
+		Revid::ServiceLocator::GetRenderer()->SetCurrentDescSet(sceneTextureID);
 
 		ImGui::Begin("Viewport");
 
 		ImVec2 viewportPanelSize = ImGui::GetContentRegionAvail();
 
 		// Maintain aspect ratio if needed
-		// ImGui::Image(
-		// 	sceneTextureID,
-		// 	viewportPanelSize,
-		// 	ImVec2(0, 0),     // UV top-left
-		// 	ImVec2(1, 1)      // UV bottom-right
-		// );
+		ImGui::Image(
+			Revid::ServiceLocator::GetRenderer()->GetCurrentDescSet(),
+			viewportPanelSize,
+			ImVec2(0, 0),     // UV top-left
+			ImVec2(1, 1)      // UV bottom-right
+		);
 
 		ImGui::End();
 

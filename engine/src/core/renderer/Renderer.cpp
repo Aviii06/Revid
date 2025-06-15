@@ -56,6 +56,7 @@ void Revid::VulkanRenderer::Init(const RendererSettings& rendererSettings)
 	createLightingDescriptorSets();
 	createCommandBuffer();
 	createSyncObjects();
+	createImguiDescriptorSets();
 }
 
 void Revid::VulkanRenderer::Render()
@@ -74,6 +75,13 @@ void Revid::VulkanRenderer::Render()
 	{
 		throw RevidRuntimeException("failed to acquire swap chain image!");
 	}
+
+	for (auto x: m_retiredImguiDescriptorSets)
+	{
+		vkFreeDescriptorSets(m_device, m_imguiDescriptorPool, 1, &x);
+	}
+
+	m_retiredImguiDescriptorSets.clear();
 
 	vkResetFences(m_device, 1, &m_inFlightFences[m_currentFrame]);
 
@@ -378,6 +386,12 @@ void Revid::VulkanRenderer::createSceneSampler()
 	}
 }
 
+void Revid::VulkanRenderer::createImguiDescriptorSets()
+{
+	m_imguiDescriptorSets.resize(m_rendererSettings.MAX_FRAMES_IN_FLIGHT);
+}
+
+
 
 void Revid::VulkanRenderer::setupDebugMessenger()
 {
@@ -627,7 +641,7 @@ void Revid::VulkanRenderer::createGbufferImages()
 			m_swapChainExtent.width,
 			m_swapChainExtent.height,
 			VK_FORMAT_R8G8B8A8_UNORM, // Use the same format as the swap chain
-			VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT,
+			VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
 			VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
 			m_sceneImages[i],
 			m_sceneImageMemories[i]);
@@ -1212,7 +1226,6 @@ void Revid::VulkanRenderer::createSyncObjects()
 	for (int i = 0; i < m_rendererSettings.MAX_FRAMES_IN_FLIGHT; i++)
 	{
 		if (vkCreateSemaphore(m_device, &semaphoreInfo, nullptr, &m_imageAvailableSemaphores[i]) != VK_SUCCESS ||
-
 			vkCreateSemaphore(m_device, &semaphoreInfo, nullptr, &m_renderFinishedSemaphores[i]) != VK_SUCCESS ||
 			vkCreateFence(m_device, &fenceInfo, nullptr, &m_inFlightFences[i]) != VK_SUCCESS)
 		{

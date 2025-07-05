@@ -5,8 +5,9 @@
 #include <revid_engine/core/renderer/Renderer.h>
 #include <revid_engine/core/ecs/EntityManager.h>
 #include <revid_engine/core/ecs/ComponentManager.h>
+#include <revid_engine/core/ecs/systems/RenderSystem.h>
 #include <revid_engine/core/ecs/SystemManager.h>
-#include <revid_engine/core/ecs/Coordinator.h>
+#include <revid_engine/core/ecs/Registry.h>
 
 #include <logging/Logging.h>
 #include <types/SmartPointers.h>
@@ -23,7 +24,7 @@ namespace Revid
         static inline Ptr<InputHandler> s_inputHandler = nullptr;
 
         // ECS subsystem
-        static inline Ptr<Coordinator> s_coordinator = nullptr;
+        static inline Ptr<ECSRegistry> s_ecsRegistry = nullptr;
 
         static inline void shutdownWindow()
         {
@@ -74,11 +75,11 @@ namespace Revid
         }
 
         // ECS subsystem
-        static inline void Provide(Coordinator* coordinator)
+        static inline void Provide(ECSRegistry* coordinator)
         {
-            if (s_coordinator != nullptr) return;
-            s_coordinator = std::unique_ptr<Coordinator>(coordinator);
-            s_coordinator->Init();
+            if (s_ecsRegistry != nullptr) return;
+            s_ecsRegistry = std::unique_ptr<ECSRegistry>(coordinator);
+            s_ecsRegistry->Init();
         }
 
         template<typename... Systems>
@@ -116,7 +117,7 @@ namespace Revid
         static inline const Ptr<EditorCamera>& GetCamera() { return s_camera; }
         static inline const Ptr<InputHandler>& GetInputHandler() { return s_inputHandler; }
 
-        static inline const Ptr<Coordinator>& GetECSCoordinator() { return s_coordinator; }
+        static inline const Ptr<ECSRegistry>& GetECSCoordinator() { return s_ecsRegistry; }
 
         static inline void ShutdownServices()
         {

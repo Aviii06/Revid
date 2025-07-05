@@ -7,6 +7,7 @@
 #include "types/SmartPointers.h"
 #include <optional>
 #include <backends/imgui_impl_vulkan.h>
+#include "PipelineDefinition.h"
 
 #define MAX_MESHES_ALLOWED 1000
 

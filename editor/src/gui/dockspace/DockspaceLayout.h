@@ -3,7 +3,7 @@
 
 namespace RevidEditor
 {
-    static void RenderDockspace()
+    static void BeginDockspace()
     {
         // Initialize DockSpace
         if (opt_fullscreen)
@@ -50,5 +50,10 @@ namespace RevidEditor
             ImGuiID dockspace_id = ImGui::GetID("MyDockSpace");
             ImGui::DockSpace(dockspace_id, ImVec2(0.0f, 0.0f), dockspace_flags);
         }
+    }
+
+    static void EndDockspace()
+    {
+        ImGui::End();
     }
 }

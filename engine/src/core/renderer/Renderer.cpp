@@ -9,7 +9,7 @@
 #include <revid_engine/core/renderer/utils/VulkanBufferUtils.h>
 #include <revid_engine/core/renderer/utils/VulkanDepthBuffer.h>
 #include <revid_engine/core/renderer/Vertex.h>
-#include <revid_engine/ServiceLocater.h>
+#include <revid_engine/ServiceLocator.h>
 
 #include <exceptions/RevidRuntimeException.h>
 #include <logging/Logging.h>

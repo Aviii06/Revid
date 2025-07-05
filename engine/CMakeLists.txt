@@ -8,6 +8,12 @@ set(SOURCES
 
         src/core/renderer/Renderer.cpp
         src/core/renderer/Mesh.cpp
+        src/core/renderer/PipelineManager.cpp
+        src/core/renderer/Shader.cpp
+        src/core/renderer/RenderCommand.cpp
+        src/core/renderer/Material.cpp
+        src/core/renderer/MaterialManager.cpp
+
         src/core/ecs/Component.cpp
         src/core/ecs/ComponentArray.cpp
         src/core/ecs/ComponentManager.cpp

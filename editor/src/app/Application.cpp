@@ -69,10 +69,11 @@ void RevidEditor::Application::intializeServices()
 
 	Revid::ServiceLocator::Provide(new Revid::InputHandler());
 
-
 	Revid::ServiceLocator::Provide(new Revid::Coordinator());
 	Revid::ServiceLocator::InitialiseComponents<Revid::TransformComponent>();
 	Revid::ServiceLocator::InitialiseSystems<Revid::TransformSystem>();
+
+	Revid::Entity ent = Revid::ServiceLocator::GetECSCoordinator()->CreateEntity();
 
 	Ref<Revid::Mesh> mesh = MakeRef<Revid::Mesh>("./assets/obj/grass.obj");
 	mesh->SetInstanceCount(2e4);
@@ -87,7 +88,6 @@ void RevidEditor::Application::intializeServices()
 	planeMesh->SetModelMatrix(modelMatrix);
 	Revid::ServiceLocator::GetRenderer()->AddMeshToScene(planeMesh);
 	//Revid::ServiceLocator::GetRenderer()->UpdateObj("./assets/obj/bunny.obj");
-
 
 	// Imgui setup
 	setupImgui();

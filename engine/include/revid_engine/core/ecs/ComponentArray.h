@@ -86,6 +86,11 @@ namespace Revid
 			}
 		}
 
+		bool HasData(Entity entity) const
+		{
+			return m_entityToIndex.find(entity) != m_entityToIndex.end();
+		}
+
 	};
 
 }

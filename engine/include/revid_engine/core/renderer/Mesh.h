@@ -5,6 +5,9 @@
 #include <types/Containers.h>
 #include <types/SmartPointers.h>
 
+#include "revid_engine/core/renderer/PipelineInfo.h"
+#include "Renderer.h"
+
 namespace Revid
 {
 	class Mesh
@@ -19,12 +22,12 @@ namespace Revid
 		int GetIndicesSize() { return m_indices.size(); }
 		int GetInstanceCount() { return m_instanceCount; }
 		void SetInstanceCount(int instanceCount) { m_instanceCount = instanceCount; }
-		glm::mat4 GetModelMatrix() const { return m_modelMatrix; }
-		void SetModelMatrix(glm::mat4 modelMatrix) { m_modelMatrix =  modelMatrix; }
+		PipelineInfo GetPipelineInfo() { return m_piplineInfo; }
 
 	private:
 		void createVertexBuffer();
 		void createIndexBuffer();
+
 
 	private:
 		VkDevice m_device;
@@ -35,9 +38,10 @@ namespace Revid
 
 		Vector<SimpleVertex> m_vertices;
 		Vector<uint16_t> m_indices;
-		glm::mat4 m_modelMatrix;
 
 		int m_instanceCount;
+
+		PipelineInfo m_piplineInfo;
 	};
 }
 

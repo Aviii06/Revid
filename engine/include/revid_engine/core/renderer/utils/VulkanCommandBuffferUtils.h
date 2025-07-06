@@ -1,4 +1,6 @@
 #pragma once
+#include <revid_engine/core/ecs/components/TransformComponent.h>
+#include <revid_engine/core/ecs/components/model/ModelComponent.h>
 #include <revid_engine/core/renderer/Renderer.h>
 
 inline void Revid::VulkanRenderer::recordCommandBuffer(const VkCommandBuffer& commandBuffer, uint32_t imageIndex)
@@ -49,17 +51,58 @@ inline void Revid::VulkanRenderer::recordCommandBuffer(const VkCommandBuffer& co
     scissor.extent = m_swapChainExtent;
     vkCmdSetScissor(commandBuffer, 0, 1, &scissor);
 
-    for (size_t i = 0; i < m_meshes.size(); i++)
+	auto ent = ServiceLocator::GetECSRegistry()->View<TransformComponent, ModelComponent>();
+
+	for (auto entity : ent)
 	{
-        updateUniformBuffer(m_currentFrame, i);
-        VkDeviceSize indexOffset = 0;
-		vkCmdBindVertexBuffers(commandBuffer, 0, 1, m_meshes[i]->GetVertexBuffer().get(), &indexOffset);
-		vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_gbufferPipelineLayout, 0, 1, &m_gbufferDescriptorSets[i][m_currentFrame], 0, nullptr);
-        VkBuffer indexBuffer = m_meshes[i]->GetIndexBuffer();
-        int indexCount = m_meshes[i]->GetIndicesSize();
-		vkCmdBindIndexBuffer(commandBuffer, indexBuffer, 0, VK_INDEX_TYPE_UINT16);
-		vkCmdDrawIndexed(commandBuffer, static_cast<uint32_t>(indexCount), m_meshes[i]->GetInstanceCount(), 0, 0, 0);
+		int meshIndex = 0;
+		ModelComponent &modelComponent =  ServiceLocator::GetECSRegistry()->GetComponent<ModelComponent>(entity);
+		TransformComponent &transformComponent = ServiceLocator::GetECSRegistry()->GetComponent<TransformComponent>(entity);
+
+		if (modelComponent.m_meshes.empty())
+		{
+			continue;
+		}
+
+		for (auto& mesh: modelComponent.m_meshes)
+		{
+			// Update UBO.
+			UniformBufferObject ubo{};
+			ubo.model = transformComponent.GetTransform();
+
+			ubo.proj = ServiceLocator::GetCamera()->GetProjectionMatrix();
+			ubo.view = ServiceLocator::GetCamera()->GetViewMatrix();
+			ubo.proj[1][1] *= -1;
+
+			mesh->GetPipelineInfo().UpdateUniformBuffer(ubo, imageIndex);
+			meshIndex++;
+
+			// Draw.
+			VkDeviceSize indexOffset = 0;
+			vkCmdBindVertexBuffers(commandBuffer, 0, 1, mesh->GetVertexBuffer().get(),
+			                       &indexOffset);
+			vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, mesh->GetPipelineInfo().GetPipelineLayout(), 0, 1,
+			                        mesh->GetPipelineInfo().GetDescriptorSet(m_currentFrame), 0, nullptr);
+
+			VkBuffer indexBuffer = mesh->GetIndexBuffer();
+			int indexCount = mesh->GetIndicesSize();
+			vkCmdBindIndexBuffer(commandBuffer, indexBuffer, 0, VK_INDEX_TYPE_UINT16);
+			vkCmdDrawIndexed(commandBuffer, static_cast<uint32_t>(indexCount), mesh->GetInstanceCount(), 0, 0,
+			                 0);
+		}
 	}
+
+ //    for (size_t i = 0; i < m_meshes.size(); i++)
+	// {
+ //        updateUniformBuffer(m_currentFrame, i);
+ //        VkDeviceSize indexOffset = 0;
+	// 	vkCmdBindVertexBuffers(commandBuffer, 0, 1, m_meshes[i]->GetVertexBuffer().get(), &indexOffset);
+	// 	vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_gbufferPipelineLayout, 0, 1, &m_gbufferDescriptorSets[i][m_currentFrame], 0, nullptr);
+ //        VkBuffer indexBuffer = m_meshes[i]->GetIndexBuffer();
+ //        int indexCount = m_meshes[i]->GetIndicesSize();
+	// 	vkCmdBindIndexBuffer(commandBuffer, indexBuffer, 0, VK_INDEX_TYPE_UINT16);
+	// 	vkCmdDrawIndexed(commandBuffer, static_cast<uint32_t>(indexCount), m_meshes[i]->GetInstanceCount(), 0, 0, 0);
+	// }
 
     vkCmdNextSubpass(commandBuffer, VK_SUBPASS_CONTENTS_INLINE);
 

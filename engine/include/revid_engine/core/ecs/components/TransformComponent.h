@@ -1,4 +1,7 @@
 #pragma once
+#define GLM_ENABLE_EXPERIMENTAL
+#include "glm/ext/matrix_transform.hpp"
+#include "glm/gtx/quaternion.hpp"
 #include "maths/Vec.h"
 #include "revid_engine/core/ecs/Registry.h"
 
@@ -9,6 +12,23 @@ namespace Revid
 		Maths::Vec3 m_position;
 		Maths::Vec3 m_rotation;
 		Maths::Vec3 m_scale;
+
+		TransformComponent()
+			: m_position(0.0f, 0.0f, 0.0f), m_rotation(0.0f, 0.0f, 0.0f), m_scale(1.0f, 1.0f, 1.0f)
+		{
+		}
+
+		TransformComponent(const Maths::Vec3& position, const Maths::Vec3& rotation, const Maths::Vec3& scale)
+			: m_position(position), m_rotation(rotation), m_scale(scale)
+		{
+		}
+
+		glm::mat4 GetTransform() const
+		{
+			return glm::translate(glm::mat4(1.0f), glm::vec3(m_position.x, m_position.y, m_position.z)) *
+			       glm::toMat4(glm::quat(glm::vec3(m_rotation.x, m_rotation.y, m_rotation.z))) *
+			       glm::scale(glm::mat4(1.0f), glm::vec3(m_scale.x, m_scale.y, m_scale.z));
+		}
 	};
 }
 

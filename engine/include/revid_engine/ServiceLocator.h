@@ -75,10 +75,10 @@ namespace Revid
         }
 
         // ECS subsystem
-        static inline void Provide(ECSRegistry* coordinator)
+        static inline void Provide(ECSRegistry* registry)
         {
             if (s_ecsRegistry != nullptr) return;
-            s_ecsRegistry = std::unique_ptr<ECSRegistry>(coordinator);
+            s_ecsRegistry = std::unique_ptr<ECSRegistry>(registry);
             s_ecsRegistry->Init();
         }
 
@@ -93,7 +93,7 @@ namespace Revid
                     static_assert(std::is_base_of_v<System, Systems>,
                                   "System must inherit from the class System.");
 
-                    GetECSCoordinator()->RegisterSystem<Systems>();
+                    GetECSRegistry()->RegisterSystem<Systems>();
                 }(), 0)...
             };
         }
@@ -106,7 +106,7 @@ namespace Revid
                 ([
                 ]
                 {
-                    GetECSCoordinator()->RegisterComponent<Components>();;
+                    GetECSRegistry()->RegisterComponent<Components>();;
                 }(), 0)...
             };
         }
@@ -117,7 +117,7 @@ namespace Revid
         static inline const Ptr<EditorCamera>& GetCamera() { return s_camera; }
         static inline const Ptr<InputHandler>& GetInputHandler() { return s_inputHandler; }
 
-        static inline const Ptr<ECSRegistry>& GetECSCoordinator() { return s_ecsRegistry; }
+        static inline const Ptr<ECSRegistry>& GetECSRegistry() { return s_ecsRegistry; }
 
         static inline void ShutdownServices()
         {

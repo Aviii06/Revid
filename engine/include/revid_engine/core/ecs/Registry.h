@@ -7,16 +7,16 @@
 namespace Revid
 {
 	template <typename... ComponentTypes>
-	class View
+	class ComponentView
 	{
 	public:
-		View(std::vector<Entity> entities)
+		ComponentView(std::vector<Entity> entities)
 			: m_entities(std::move(entities))
 		{
 		}
 
-		std::vector<Entity>::iterator begin() { return m_entities.begin(); }
-		std::vector<Entity>::iterator end() { return m_entities.end(); }
+		std::vector<Entity>::const_iterator begin() const { return m_entities.begin(); }
+		std::vector<Entity>::const_iterator end() const { return m_entities.end(); }
 
 	private:
 		std::vector<Entity> m_entities;
@@ -132,9 +132,8 @@ namespace Revid
 			return Set<Entity>();
 		}
 
-		// Get Entities having all the components
-		template<typename... ComponentTypes>
-		View<ComponentTypes...> View()
+		template <typename... ComponentTypes>
+		ComponentView<ComponentTypes...> View()
 		{
 			std::vector<Entity> result;
 
@@ -146,8 +145,9 @@ namespace Revid
 				}
 			}
 
-			return View<ComponentTypes...>(std::move(result));
+			return ComponentView<ComponentTypes...>(std::move(result));
 		}
+
 
 	private:
 		Ptr<ComponentManager> m_componentManager;

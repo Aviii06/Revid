@@ -1,5 +1,6 @@
+#include <exceptions/RevidRuntimeException.h>
 #include <revid_engine/core/renderer/Mesh.h>
-#include <revid_engine/ServiceLocater.h>
+#include <revid_engine/ServiceLocator.h>
 
 Revid::Mesh::Mesh(String file_name)
 {
@@ -104,12 +105,11 @@ Revid::Mesh::Mesh(String file_name)
 	j++;
 
 	m_instanceCount = 1;
-	m_modelMatrix = glm::mat4(1.0f);
 	m_device = ServiceLocator::GetRenderer()->GetDeivce();
+	m_piplineInfo = PipelineInfo("./assets/shaders/GBufferShader.vert.spv", "./assets/shaders/GBufferShader.frag.spv");
 	createVertexBuffer();
 	createIndexBuffer();
 }
-
 
 void Revid::Mesh::createVertexBuffer()
 {

@@ -2,23 +2,23 @@
 #define GLFW_INCLUDE_VULKAN
 #include <vulkan/vulkan.h>
 
-#include "Mesh.h"
+#include <types/Containers.h>
 #include "Vertex.h"
 #include "types/SmartPointers.h"
 #include <optional>
 #include <backends/imgui_impl_vulkan.h>
-#include "PipelineDefinition.h"
 
 #define MAX_MESHES_ALLOWED 1000
 
-struct UniformBufferObject {
-    glm::mat4 model;
-    glm::mat4 view;
-    glm::mat4 proj;
-};
-
 namespace Revid
 {
+    struct UniformBufferObject {
+        glm::mat4 model;
+        glm::mat4 view;
+        glm::mat4 proj;
+    };
+
+
 	struct SimpleVertex;
     struct RendererSettings
     {
@@ -61,9 +61,12 @@ namespace Revid
         void UpdateVertices(Vector<SimpleVertex>);
         void UpdateIndices(Vector<uint16_t>);
         void UpdateObj(String path);
-        void AddMeshToScene(Ref<Mesh> mesh);
         VkDevice GetDeivce() const { return m_device; }
         void FramebufferResized() { m_framebufferResized = true; }
+        uint8_t GetNumberOfInFlightFrames() const
+		{
+			return m_rendererSettings.MAX_FRAMES_IN_FLIGHT;
+		}
 
         VkSampler GetSceneSampler() const
         {
@@ -106,6 +109,29 @@ namespace Revid
         {
             m_retiredImguiDescriptorSets.push_back(m_imguiDescriptorSets[m_currentFrame]);
             m_imguiDescriptorSets[m_currentFrame] = descSet;
+        }
+
+
+        // AllocatedImage CreateAttachment(VkDevice device,
+        //                                 VkFormat format,
+								// 		VkExtent2D extent,
+        //                                 VkImageUsageFlags usage,
+        //                                 VkImageAspectFlags aspectMask)
+        // {
+        //     AllocatedImage out{};
+        //
+        //     createImage(device, extent.width, extent.height, format,
+        //                 usage, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
+        //                 out.image, out.memory);
+        //
+        //     out.view = createImageView(device, out.image, format, aspectMask);
+        //
+        //     return out;
+        // }
+
+        VkRenderPass GetRenderPass() const
+        {
+            return m_renderPass;
         }
 
 
@@ -330,8 +356,6 @@ namespace Revid
             0, 2, 1,
             2, 0, 3
 		};
-
-        Vector<Ref<Mesh>> m_meshes;
 
         VkDescriptorPool m_imguiDescriptorPool;
 

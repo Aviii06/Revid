@@ -4,7 +4,7 @@
 
 using namespace Revid;
 
-Shader::Shader(String& shaderPath)
+Shader::Shader(const String& shaderPath)
 	: m_shaderPath(shaderPath)
 {
 	std::vector<char> shaderCode = RevidUtils::ReadFile(shaderPath);

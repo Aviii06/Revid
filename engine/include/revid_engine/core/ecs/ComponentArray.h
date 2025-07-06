@@ -16,12 +16,6 @@ namespace Revid
 	template <typename T>
 	class ComponentArray : public IComponentArray
 	{
-	private:
-		Array<T, MAX_ENTITIES> m_components;
-		Map<Entity, size_t> m_entityToIndex;
-		Map<size_t, Entity> m_indexToEntity;
-		size_t m_size;
-
 	public:
 		ComponentArray()
 		{
@@ -32,12 +26,6 @@ namespace Revid
 
 		void Insert(Entity entity, T component)
 		{
-			if (m_entityToIndex.find(entity) == m_entityToIndex.end())
-			{
-				std::cerr << "Cannot add the same component to the same entity. EntityID: " << entity << std::endl;
-				return;
-			}
-
 			m_components[entity] = component;
 			m_entityToIndex[entity] = m_size;
 			m_indexToEntity[m_size] = entity;
@@ -70,7 +58,7 @@ namespace Revid
 
 		T& Get(Entity entity)
 		{
-			if (m_entityToIndex.find(entity) != m_entityToIndex.end())
+			if (m_entityToIndex.find(entity) == m_entityToIndex.end())
 			{
 				std::cerr << "Couldn't get the component of the entity with EntityID: " << entity << std::endl;
 			}
@@ -90,6 +78,12 @@ namespace Revid
 		{
 			return m_entityToIndex.find(entity) != m_entityToIndex.end();
 		}
+
+	private:
+		Array<T, MAX_ENTITIES> m_components{};
+		Map<Entity, size_t> m_entityToIndex;
+		Map<size_t, Entity> m_indexToEntity;
+		size_t m_size;
 
 	};
 

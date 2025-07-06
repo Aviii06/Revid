@@ -2,7 +2,7 @@
 #include <imgui.h>
 #include <backends/imgui_impl_vulkan.h>
 #include <backends/imgui_impl_glfw.h>
-#include <revid_engine/ServiceLocater.h>
+#include <revid_engine/ServiceLocator.h>
 #include <gui/dockspace/DockspaceLayout.h>
 #include <gui/configs/UIFlags.h>
 

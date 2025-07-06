@@ -1,5 +1,5 @@
 #include <revid_engine/input/InputHandler.h>
-#include <revid_engine/ServiceLocater.h>
+#include <revid_engine/ServiceLocator.h>
 
 #include <GLFW/glfw3.h>
 

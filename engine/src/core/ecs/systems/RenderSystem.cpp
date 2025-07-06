@@ -9,7 +9,7 @@ namespace Revid
 	{
 		for (auto const& entity : m_entities)
 		{
-			auto& mc = ServiceLocator::GetECSCoordinator()->GetComponent<ModelComponent>(entity);
+			auto& mc = ServiceLocator::GetECSRegistry()->GetComponent<ModelComponent>(entity);
 			for (auto& x : mc.m_meshes)
 			{
 			}

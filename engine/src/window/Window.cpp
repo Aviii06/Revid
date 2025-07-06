@@ -1,6 +1,6 @@
 #include <revid_engine/window/Window.h>
 #include <exceptions/RevidRuntimeException.h>
-#include <revid_engine/ServiceLocater.h>
+#include <revid_engine/ServiceLocator.h>
 
 void Revid::Window::OpenWindow(const WindowData& windowData)
 {

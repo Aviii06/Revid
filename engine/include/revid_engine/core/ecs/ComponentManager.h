@@ -27,7 +27,7 @@ namespace Revid
 		}
 
 		template <typename T>
-		bool ComponentManager::HasComponent(Entity entity)
+		bool HasComponent(Entity entity)
 		{
 			return GetComponentArray<T>()->HasData(entity);
 		}

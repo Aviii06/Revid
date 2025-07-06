@@ -28,6 +28,8 @@ set(SOURCES
         src/window/Window.cpp
         src/input/Camera.cpp
         src/input/InputHandler.cpp
+        src/core/renderer/RenderGraph.cpp
+        src/core/renderer/PipelineInfo.cpp
 )
 
 add_library(${PROJECT_NAME} ${SOURCES})

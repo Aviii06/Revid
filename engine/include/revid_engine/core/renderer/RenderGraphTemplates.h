@@ -1,31 +1,39 @@
 #pragma once
 #include <types/Containers.h>
+#include <vulkan/vulkan.h>
 
 namespace Revid
 {
     struct AttachmentTemplate
     {
-        std::string name;
+        String name;
         VkFormat format;
         bool clear;
-        bool isDepth;
+        bool isDepth = false;
         bool isSwapchain = false;
+    };
+
+    struct AttachmentRefTemplate
+    {
+        String name;
+        VkImageLayout layout;
     };
 
     struct SubpassTemplate
     {
         uint32_t index;
-        std::vector<std::string> colorAttachments;
-        std::optional<std::string> depthAttachment;
+        Vector<AttachmentRefTemplate> colorAttachments;
+        Vector<AttachmentRefTemplate> inputAttachments;
+        std::optional<String> depthAttachment;
         bool readFromPrevious = false;
     };
 
     struct RenderPassTemplate
     {
-        std::string name;
+        String name;
         VkExtent2D extent;
-        std::vector<AttachmentTemplate> attachments;
-        std::vector<SubpassTemplate> subpasses;
+        Vector<AttachmentTemplate> attachments;
+        Vector<SubpassTemplate> subpasses;
     };
 
     struct AllocatedImage

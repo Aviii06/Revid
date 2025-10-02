@@ -32,6 +32,11 @@ namespace Revid
 			return m_pipelineLayout;
 		}
 
+		VkPipeline GetPipeline() const
+		{
+			return m_pipeline;
+		}
+
 	private:
 		void createDescriptorPool();
 		void createDescriptorSets();

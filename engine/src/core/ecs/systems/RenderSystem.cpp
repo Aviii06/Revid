@@ -2,18 +2,14 @@
 
 #include "revid_engine/core/ecs/components/model/ModelComponent.h"
 #include <revid_engine/core/ecs/ECS.h>
+#include <revid_engine/core/renderer/RenderStages.h>
 
 namespace Revid
 {
-	void RenderSystem::Update(float dt)
+	void RenderSystem::Update(float dt, RenderGraph& graph)
 	{
-		for (auto const& entity : m_entities)
-		{
-			auto& mc = ServiceLocator::GetECSRegistry()->GetComponent<ModelComponent>(entity);
-			for (auto& x : mc.m_meshes)
-			{
-			}
-		}
+		GBufferRS::Record(graph);
+		LightingRS::Record(graph);
 	}
 }
 

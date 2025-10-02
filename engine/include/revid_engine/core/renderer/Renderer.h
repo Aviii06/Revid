@@ -4,9 +4,9 @@
 
 #include <types/Containers.h>
 #include "Vertex.h"
-#include "types/SmartPointers.h"
 #include <optional>
 #include <backends/imgui_impl_vulkan.h>
+#include <revid_engine/core/renderer/RenderGraphBuilder.h>
 
 #define MAX_MESHES_ALLOWED 1000
 
@@ -57,7 +57,7 @@ namespace Revid
     public:
         void Init(const RendererSettings&);
         void Shutdown();
-        void Render();
+        void Render(RenderGraph& renderGraph);
         void UpdateVertices(Vector<SimpleVertex>);
         void UpdateIndices(Vector<uint16_t>);
         void UpdateObj(String path);
@@ -112,27 +112,57 @@ namespace Revid
         }
 
 
-        // AllocatedImage CreateAttachment(VkDevice device,
-        //                                 VkFormat format,
-								// 		VkExtent2D extent,
-        //                                 VkImageUsageFlags usage,
-        //                                 VkImageAspectFlags aspectMask)
-        // {
-        //     AllocatedImage out{};
-        //
-        //     createImage(device, extent.width, extent.height, format,
-        //                 usage, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
-        //                 out.image, out.memory);
-        //
-        //     out.view = createImageView(device, out.image, format, aspectMask);
-        //
-        //     return out;
-        // }
+        AllocatedImage CreateAttachment(VkDevice device,
+                                        VkFormat format,
+										VkExtent2D extent,
+                                        VkImageUsageFlags usage,
+                                        VkImageAspectFlags aspectMask)
+        {
+            AllocatedImage out{};
+
+            createImage(device, extent.width, extent.height, format,
+                        usage, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
+                        out.image, out.memory);
+
+            out.view = createImageView(device, out.image, format, aspectMask);
+
+            return out;
+        }
+
+        // TODO: Figure out a better solution.
+        VkPipeline GetLightingPipeline() const  { return m_lightingPipeline; }
 
         VkRenderPass GetRenderPass() const
         {
             return m_renderPass;
         }
+
+        VkFramebuffer GetFramebuffer(uint32_t frameIndex) const
+		{
+			return m_sceneFramebuffers[frameIndex];
+		}
+
+        RenderGraph CreateRenderGraph();
+
+        VkBuffer GetLightingVertexBuffer() const
+		{
+			return m_lightingVertexBuffer;
+		}
+
+        VkBuffer GetLightingIndexBuffer() const
+        {
+            return m_lightingIndexBuffer;
+        }
+
+        VkPipelineLayout GetLightingPipelineLayout() const
+		{
+			return m_lightingPipelineLayout;
+		}
+
+        const VkDescriptorSet* GetLightingDescriptorSet(uint32_t frameIndex)
+		{
+			return &m_lightingDescriptorSets[frameIndex];
+		}
 
 
     private:
@@ -166,6 +196,7 @@ namespace Revid
         void createImguiRenderPass();
         void createImguiDescriptorSets();
 
+
     private:
         bool checkValidationLayers();
 
@@ -198,7 +229,7 @@ namespace Revid
         VkExtent2D chooseSwapExtent(const VkSurfaceCapabilitiesKHR& capabilities);
 
         VkShaderModule createShaderModule(const std::vector<char>& code);
-        void recordCommandBuffer(const VkCommandBuffer& commandBuffer, uint32_t imageIndex);
+        void recordCommandBuffer(VkCommandBuffer& commandBuffer, uint32_t imageIndex, RenderGraph& graph);
         VkFormat findSupportedFormat(const std::vector<VkFormat>& candidates, VkImageTiling tiling, VkFormatFeatureFlags features);
         VkFormat findDepthFormat();
 
@@ -367,5 +398,7 @@ namespace Revid
 
         Vector<VkDescriptorSet> m_imguiDescriptorSets;
         Vector<VkDescriptorSet> m_retiredImguiDescriptorSets;
+
+        RenderGraph m_renderGraph;
     };
 }

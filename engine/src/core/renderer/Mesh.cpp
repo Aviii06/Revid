@@ -106,7 +106,7 @@ Revid::Mesh::Mesh(String file_name)
 
 	m_instanceCount = 1;
 	m_device = ServiceLocator::GetRenderer()->GetDeivce();
-	m_piplineInfo = PipelineInfo("./assets/shaders/GBufferShader.vert.spv", "./assets/shaders/GBufferShader.frag.spv");
+	m_piplineInfo = MakeRef<PipelineInfo>("./assets/shaders/GBufferShader.vert.spv", "./assets/shaders/GBufferShader.frag.spv");
 	createVertexBuffer();
 	createIndexBuffer();
 }

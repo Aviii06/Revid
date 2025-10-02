@@ -55,9 +55,11 @@ void Revid::VulkanRenderer::Init(const RendererSettings& rendererSettings)
 	createCommandBuffer();
 	createSyncObjects();
 	createImguiDescriptorSets();
+
+	CreateRenderGraph();
 }
 
-void Revid::VulkanRenderer::Render()
+void Revid::VulkanRenderer::Render(RenderGraph& renderGraph)
 {
 	vkWaitForFences(m_device, 1, &m_inFlightFences[m_currentFrame], VK_TRUE, UINT64_MAX);
 
@@ -84,7 +86,7 @@ void Revid::VulkanRenderer::Render()
 	vkResetFences(m_device, 1, &m_inFlightFences[m_currentFrame]);
 
 	vkResetCommandBuffer(m_commandBuffers[m_currentFrame], 0);
-	recordCommandBuffer(m_commandBuffers[m_currentFrame], imageIndex);
+	recordCommandBuffer(m_commandBuffers[m_currentFrame], imageIndex, renderGraph);
 
 	VkSubmitInfo submitInfo{};
 	submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
@@ -1478,5 +1480,52 @@ void Revid::VulkanRenderer::createLightingDescriptorSets()
 		vkUpdateDescriptorSets(m_device, 3, descriptorWrites, 0, nullptr);
 	}
 }
+
+Revid::RenderGraph Revid::VulkanRenderer::CreateRenderGraph()
+{
+	RenderPassTemplate rpt {};
+	rpt.name = "GeometryPass";
+	rpt.extent = m_swapChainExtent;
+
+	Vector<AttachmentTemplate> attachments = {
+		{"gPosition", VK_FORMAT_R16G16B16A16_SFLOAT, true},
+		{"gColor", VK_FORMAT_R8G8B8A8_UNORM, true},
+		{"gNormal", VK_FORMAT_R16G16B16A16_SFLOAT, true},
+		{"gDepth", findDepthFormat(), true, true},
+		{"sceneColor", m_swapChainImageFormat, true, false, true}
+	};
+
+	Vector<SubpassTemplate> subpasses = {
+		{
+			0,
+			{
+				{"gPosition", VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL},
+				{"gColor", VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL},
+				{"gNormal", VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL}
+			},
+			{},
+			"gDepth",
+			false
+		},
+		{
+			1,
+			{{"sceneColor", VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL}},
+			{
+				{"gPosition", VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL},
+				{"gColor", VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL},
+				{"gNormal", VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL}
+			}
+		}
+	};
+
+	rpt.attachments = attachments;
+	rpt.subpasses = subpasses;
+
+	RenderGraph renderGraph = RenderGraph();
+	renderGraph.AddPassFromTemplate(rpt, m_device, m_swapChainImageViews);
+
+	return renderGraph;
+}
+
 
 

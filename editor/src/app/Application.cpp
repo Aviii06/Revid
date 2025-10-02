@@ -44,7 +44,10 @@ void RevidEditor::Application::Run()
     	Revid::ServiceLocator::GetInputHandler()->HandleInput();
 		updateImgui();
 
-        Revid::ServiceLocator::GetRenderer()->Render();
+    	Revid::RenderGraph graph = Revid::ServiceLocator::GetRenderer()->CreateRenderGraph();
+    	Revid::ServiceLocator::GetECSRegistry()->GetSystem<Revid::RenderSystem>()->Update(0, graph);
+
+        Revid::ServiceLocator::GetRenderer()->Render(graph);
     }
 }
 

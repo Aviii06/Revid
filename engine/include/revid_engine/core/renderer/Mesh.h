@@ -22,7 +22,9 @@ namespace Revid
 		int GetIndicesSize() { return m_indices.size(); }
 		int GetInstanceCount() { return m_instanceCount; }
 		void SetInstanceCount(int instanceCount) { m_instanceCount = instanceCount; }
-		PipelineInfo GetPipelineInfo() { return m_piplineInfo; }
+
+		void SetPipelineInfo(Ref<PipelineInfo> pipelineInfo) { m_piplineInfo = pipelineInfo; }
+		Ref<PipelineInfo> GetPipelineInfo() { return m_piplineInfo; }
 
 	private:
 		void createVertexBuffer();
@@ -41,7 +43,7 @@ namespace Revid
 
 		int m_instanceCount;
 
-		PipelineInfo m_piplineInfo;
+		Ref<PipelineInfo> m_piplineInfo;
 	};
 }
 

@@ -40,6 +40,7 @@ uint32_t Revid::VulkanRenderer::findMemoryType(uint32_t typeFilter, VkMemoryProp
 	{
 		if ((typeFilter & (1 << i)) && (memProperties.memoryTypes[i].propertyFlags & properties) == properties)
 		{
+
 			return i;
 		}
 	}

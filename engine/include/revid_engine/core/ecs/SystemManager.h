@@ -30,7 +30,7 @@ namespace Revid
 			auto it = m_systems.find(typeName);
 			if (it != m_systems.end())
 			{
-				return it->second;
+				return std::static_pointer_cast<T>(it->second);
 			}
 			return nullptr;
 		}

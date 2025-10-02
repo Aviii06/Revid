@@ -30,6 +30,7 @@ set(SOURCES
         src/input/InputHandler.cpp
         src/core/renderer/RenderGraph.cpp
         src/core/renderer/PipelineInfo.cpp
+        src/core/renderer/RenderStages.cpp
 )
 
 add_library(${PROJECT_NAME} ${SOURCES})

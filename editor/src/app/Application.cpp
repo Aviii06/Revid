@@ -1,11 +1,15 @@
 #include "Application.h"
-#include "revid_engine/ServiceLocater.h"
-#include <revid_engine/platform/CustomWindow.h>
+#include "revid_engine/ServiceLocator.h"
+#include <revid_engine/window/Window.h>
+#include <revid_engine/core/renderer/Renderer.h>
+#include <revid_engine/core/ecs/systems/TransformSystem.h>
+
 #define GLM_ENABLE_EXPERIMENTAL
+#include <revid_engine/core/ecs/components/model/ModelComponent.h>
+
 #include "glm/gtx/transform.hpp"
-#include "revid_engine/renderer/vulkan/VulkanRenderer.h"
 #include "logging/Logging.h"
-#include "gui/ImguiHelper.h"
+#include "gui/EditorUIManager.h"
 
 RevidEditor::Application::Application()
     : Application("Revid")
@@ -40,13 +44,16 @@ void RevidEditor::Application::Run()
     	Revid::ServiceLocator::GetInputHandler()->HandleInput();
 		updateImgui();
 
-        Revid::ServiceLocator::GetRenderer()->Render();
+    	Revid::RenderGraph graph = Revid::ServiceLocator::GetRenderer()->CreateRenderGraph();
+    	Revid::ServiceLocator::GetECSRegistry()->GetSystem<Revid::RenderSystem>()->Update(0, graph);
+
+        Revid::ServiceLocator::GetRenderer()->Render(graph);
     }
 }
 
 void RevidEditor::Application::intializeServices()
 {
-    Revid::ServiceLocator::Provide(new Revid::CustomWindow());
+    Revid::ServiceLocator::Provide(new Revid::Window());
 
     Revid::ServiceLocator::GetWindow()->OpenWindow({
         m_title,
@@ -67,18 +74,35 @@ void RevidEditor::Application::intializeServices()
 
 	Revid::ServiceLocator::Provide(new Revid::InputHandler());
 
+	Revid::ServiceLocator::Provide(new Revid::ECSRegistry());
+	Revid::ServiceLocator::InitialiseComponents<Revid::TransformComponent, Revid::ModelComponent>();
+	Revid::ServiceLocator::InitialiseSystems<Revid::TransformSystem>();
+
+
+
+
+	Revid::Entity grass = Revid::ServiceLocator::GetECSRegistry()->CreateEntity();
+	Revid::TransformComponent tc = Revid::TransformComponent(Revid::Maths::Vec3(0.0f, 0.0f, 0.0f), Revid::Maths::Vec3(0.0f, 0.0f, 0.0f), Revid::Maths::Vec3(1.0f, 1.0f, 1.0f));
+	Revid::ModelComponent mc = Revid::ModelComponent();
 	Ref<Revid::Mesh> mesh = MakeRef<Revid::Mesh>("./assets/obj/grass.obj");
 	mesh->SetInstanceCount(2e4);
-	glm::mat4 modelMatrix2 = glm::mat4(1.0f);
-	mesh->SetModelMatrix(modelMatrix2);
-	Revid::ServiceLocator::GetRenderer()->AddMeshToScene(mesh);
+	mc.m_meshes.push_back(mesh);
+	Revid::ServiceLocator::GetECSRegistry()->AddComponent(grass, tc);
+	Revid::ServiceLocator::GetECSRegistry()->AddComponent(grass, mc);
+
+	// Revid::ServiceLocator::GetRenderer()->AddMeshToScene(mesh);
+
+
+	Revid::Entity plane = Revid::ServiceLocator::GetECSRegistry()->CreateEntity();
+	Revid::TransformComponent ptc = Revid::TransformComponent(Revid::Maths::Vec3(0.0f, 0.0f, 0.0f), Revid::Maths::Vec3(0.0f, 0.0f, 0.0f), Revid::Maths::Vec3(10.0f, 10.0f, 10.0f));
+	Revid::ModelComponent pmc = Revid::ModelComponent();
+	Revid::ServiceLocator::GetECSRegistry()->AddComponent(plane, ptc);
 	Ref<Revid::Mesh> planeMesh = MakeRef<Revid::Mesh>("./assets/obj/plane.obj");
-	// The model matrix which is pretty big.
 	planeMesh->SetInstanceCount(1);
-	// Translate the plane to 500, 500.
-	glm::mat4 modelMatrix = glm::translate(glm::mat4(100.0f), glm::vec3(0.0f, 0.0f, 0.0f));
-	planeMesh->SetModelMatrix(modelMatrix);
-	Revid::ServiceLocator::GetRenderer()->AddMeshToScene(planeMesh);
+	pmc.m_meshes.push_back(planeMesh);
+	Revid::ServiceLocator::GetECSRegistry()->AddComponent(plane, pmc);
+
+	// Revid::ServiceLocator::GetRenderer()->AddMeshToScene(planeMesh);
 	//Revid::ServiceLocator::GetRenderer()->UpdateObj("./assets/obj/bunny.obj");
 
 	// Imgui setup
